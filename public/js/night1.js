@@ -17,6 +17,19 @@ import { play } from "./sound.js";
 
 const NIGHT = 1;
 const DATA_URL = "data/night1.json";
+const WORKSTATION = "SOC-WS-07";
+
+const SCREENS = ["menu", "howto", "briefing", "inbox", "results"];
+// What the taskbar shows for each screen, like the active window's title.
+const TASK_LABELS = {
+  menu: "Logon: SOC-WS-07",
+  howto: "KL-SOC-MEMO-0412.txt",
+  briefing: "Handoff Log",
+  inbox: "Mail Triage: SOC Queue",
+  results: "End of Shift Report",
+};
+// Screens where a shift is under way, so the taskbar shows XP and progress.
+const SHIFT_SCREENS = new Set(["briefing", "inbox", "results"]);
 
 const $ = (id) => document.getElementById(id);
 
@@ -72,6 +85,29 @@ function isRedFlag(email, id) {
   return Object.hasOwn(email.redFlags, id);
 }
 
+/** A small status tag. The word carries the meaning; color only reinforces it. */
+function tag(text, kind) {
+  return el("span", { className: `tag tag-${kind}`, text });
+}
+
+/** "MMDD" from the night's shift date, used in ticket numbers. */
+function shiftCode() {
+  const match = /^\d{4}-(\d{2})-(\d{2})$/.exec(state.data.shiftDate ?? "");
+  return match ? `${match[1]}${match[2]}` : "0000";
+}
+
+function ticketId(i) {
+  return `INC-${shiftCode()}-${String(i + 1).padStart(4, "0")}`;
+}
+
+function handoffId() {
+  return `HANDOFF SOC-${shiftCode()}-N${NIGHT}`;
+}
+
+function shiftClock() {
+  return formatClock(state.config.shiftStartHour * 60 + state.minutes);
+}
+
 /* ---------- Derived values (all from config) ---------- */
 
 function minutesPerEmail() {
@@ -122,9 +158,19 @@ function updateProgress() {
   $("hud-progress-fill").style.width = `${total ? (done / total) * 100 : 0}%`;
 }
 
+function updateFolders() {
+  const done = state.results.filter(Boolean);
+  const open = state.data.emails.length - done.length;
+  $("folder-queue").textContent = String(open);
+  $("folder-reported").textContent = String(done.filter((r) => r.choice === "phishing").length);
+  $("folder-trusted").textContent = String(done.filter((r) => r.choice === "legitimate").length);
+  $("status-queue").textContent = `Queue: ${open} open`;
+}
+
 function updateHud({ bump = false } = {}) {
-  $("hud-clock").textContent = formatClock(state.config.shiftStartHour * 60 + state.minutes);
+  $("hud-clock").textContent = shiftClock();
   updateProgress();
+  updateFolders();
   const xpNode = $("hud-xp");
   xpNode.textContent = String(state.xp);
   $("hud-rank").textContent = rankFor(state.xp);
@@ -138,17 +184,70 @@ function updateHud({ bump = false } = {}) {
 /* ---------- Screens ---------- */
 
 function showScreen(name) {
-  for (const id of ["screen-briefing", "screen-inbox", "screen-results"]) {
-    $(id).hidden = id !== `screen-${name}`;
-  }
+  hideTooltip();
+  for (const screen of SCREENS) $(`screen-${screen}`).hidden = screen !== name;
   $("help-btn").hidden = name !== "inbox";
+  $("logoff-btn").hidden = name === "menu";
+  $("tray-shift").hidden = !SHIFT_SCREENS.has(name);
+  $("task-window").textContent = TASK_LABELS[name];
   window.scrollTo(0, 0);
+}
+
+/* ---------- Main menu, memo, and logging off ---------- */
+
+function renderMenu() {
+  const best = getNightBest(NIGHT);
+  $("menu-best").hidden = !best;
+  if (best) $("menu-best").textContent = `Best: ${best.bestXp} XP, ${best.bestRank}`;
+  const start = $("menu-start-btn");
+  start.textContent = "Start Night 1";
+  start.disabled = false;
+}
+
+function showMenu() {
+  renderMenu();
+  showScreen("menu");
+  $("menu-start-btn").focus({ preventScroll: true });
+}
+
+/** Fill the memo's scoring and rank tables from config, so they never go stale. */
+function renderMemo() {
+  const { xp, ranks } = state.config;
+  const rows = [
+    ["Correct call", xp.correctCall],
+    ["Each real red flag you flag", xp.redFlagFound],
+    ["Each thing you flag that isn't a red flag", xp.falseFlag],
+    ["Wrong call", xp.wrongCall],
+  ];
+  $("memo-xp").replaceChildren(
+    ...rows.map(([label, value]) => el("tr", {}, [el("td", { text: label }), el("td", { text: `${signed(value)} XP` })])),
+  );
+  const sorted = [...ranks].sort((a, b) => a.minPercent - b.minPercent);
+  $("memo-ranks").replaceChildren(
+    ...sorted.map((r) =>
+      el("tr", {}, [
+        el("td", { text: r.name }),
+        el("td", { text: r.minPercent === 0 ? "Starting rank" : `${r.minPercent}% or more` }),
+      ]),
+    ),
+  );
+}
+
+function isShiftInProgress() {
+  return !$("screen-inbox").hidden;
+}
+
+/** Taskbar "Log off": confirm first if a shift is under way. */
+function requestLogoff() {
+  if (isShiftInProgress()) $("logoff-dialog").showModal();
+  else showMenu();
 }
 
 /** The "?" button: the same briefing, in a dialog, without leaving the shift. */
 function buildBriefingDialog() {
   const { briefing } = state.data;
-  $("briefing-dialog-from").textContent = `Note from ${briefing.from}`;
+  $("briefing-dialog-title").textContent = `Shift handoff: ${handoffId()}`;
+  $("briefing-dialog-from").textContent = `From ${briefing.from}`;
   $("briefing-dialog-body").replaceChildren(...briefing.paragraphs.map((text) => el("p", { text })));
   // Reuse the legend and shortcut lists from the briefing screen so they never drift apart.
   const lists = document.querySelectorAll("#screen-briefing .legend, #screen-briefing .legend-title");
@@ -165,22 +264,38 @@ function openBriefingDialog() {
 function onProgressReset() {
   $("briefing-best").hidden = true;
   $("briefing-best").textContent = "";
-  if (!$("screen-results").hidden) $("results-best").textContent = "No saved best score.";
+  $("menu-best").hidden = true;
+  $("menu-best").textContent = "";
+  if (!$("screen-results").hidden) $("results-best").textContent = "No saved best score on file.";
 }
 
 function renderBriefing() {
   const { briefing, title } = state.data;
+  const { shiftStartHour, shiftEndHour } = state.config;
   $("briefing-title").textContent = title;
-  $("briefing-from").textContent = `Note from ${briefing.from}`;
+  $("briefing-ticket").textContent = handoffId();
+  $("briefing-ticket-field").textContent = handoffId().replace("HANDOFF ", "");
+  $("briefing-from").textContent = briefing.from;
+  $("briefing-shift").textContent = `${formatClock(shiftStartHour * 60)} to ${formatClock(shiftEndHour * 60)}`;
   $("briefing-body").replaceChildren(...briefing.paragraphs.map((text) => el("p", { text })));
 
   const best = getNightBest(NIGHT);
   $("briefing-best").hidden = !best;
-  if (best) $("briefing-best").textContent = `Personal best: ${best.bestXp} XP (${best.bestRank})`;
+  if (best) $("briefing-best").textContent = `Your best on file: ${best.bestXp} XP, ${best.bestRank}`;
 
   const start = $("start-btn");
-  start.textContent = "Start shift";
+  start.textContent = "Acknowledge and start shift";
   start.disabled = false;
+}
+
+function openBriefing() {
+  renderBriefing();
+  state.minutes = 0;
+  state.xp = 0;
+  state.results = [];
+  updateHud();
+  showScreen("briefing");
+  $("start-btn").focus({ preventScroll: true });
 }
 
 /* ---------- Inbox list ---------- */
@@ -197,26 +312,25 @@ function renderMailList() {
       if (i === state.viewing) status += " is-viewing";
 
       const item = el("li", { className: `mail-item ${status}` }, [
-        el("span", { className: "mi-from", text: email.from.name }),
+        el("span", { className: "mi-ticket", text: ticketId(i) }),
         el("span", { className: "mi-time", text: email.received }),
+        el("span", { className: "mi-from", text: email.from.name }),
         el("span", { className: "mi-subject", text: email.subject }),
       ]);
       if (i === state.viewing) item.setAttribute("aria-current", "true");
-      // Status is always spelled out in text (and an icon), never color alone.
+
+      // Status is always spelled out in words, never color alone.
+      const statusRow = el("span", { className: "mi-status" });
       if (result) {
         const action = result.choice === "phishing" ? "Reported" : "Trusted";
-        item.append(
-          el("span", {
-            className: `mi-badge ${result.correct ? "right" : "wrong"}`,
-            text: `${result.correct ? "✓" : "✗"} ${action} · ${result.correct ? "correct" : "wrong"}`,
-          }),
-        );
+        statusRow.append(tag(result.correct ? "Pass" : "Fail", result.correct ? "ok" : "fail"), tag(action, "muted"));
+        if (i === state.viewing) statusRow.append(tag("Viewing", "amber"));
       } else if (i === state.index) {
-        item.append(el("span", { className: "mi-badge now", text: "▸ Now" }));
+        statusRow.append(tag("Open", "amber"));
       } else {
-        item.append(el("span", { className: "sr-only", text: "Not opened yet" }));
+        statusRow.append(tag("Queued", "muted"));
       }
-      if (result && i === state.viewing) item.append(el("span", { className: "mi-badge viewing", text: "◉ Viewing" }));
+      item.append(statusRow);
       return item;
     }),
   );
@@ -267,6 +381,9 @@ function renderEmail(email) {
   view.classList.remove("is-resolved");
   const parts = [];
 
+  const i = state.data.emails.indexOf(email);
+  $("ticket-line").textContent = `${ticketId(i)} · Opened ${email.received} · Source: SOC inbox (user report)`;
+
   if (email.forwardedBy) {
     const note = el("div", { className: "forward-note" }, [
       el("strong", { text: "Forwarded to SOC by " }),
@@ -313,7 +430,8 @@ function renderEmail(email) {
     const c = email.calendar;
     body.append(
       el("div", { className: "calendar-card" }, [
-        el("h3", { text: `📅 ${c.title}` }),
+        tag("Meeting invite", "amber"),
+        el("h3", { text: c.title }),
         el("p", { text: c.when }),
         el("p", { text: c.where }),
         el("p", { text: `Organizer: ${c.organizer}` }),
@@ -425,9 +543,11 @@ function decide(choice) {
   const falseXp = falseFlags.length * xp.falseFlag;
   const delta = callXp + flagXp + falseXp;
 
+  const loggedAt = shiftClock();
   state.xp += delta;
   state.minutes += minutesPerEmail();
   const result = {
+    loggedAt,
     choice,
     correct,
     flagged: [...state.flagged],
@@ -474,12 +594,18 @@ function renderFeedback(email, r, i, { focus = true } = {}) {
   if (r.found.length) breakdown.push(`${signed(r.flagXp)} for ${plural(r.found.length, "red flag")}`);
   if (r.falseFlags.length) breakdown.push(`${signed(r.falseXp)} for ${plural(r.falseFlags.length, "false flag")}`);
 
+  const action = r.choice === "phishing" ? "Reported as phishing" : "Marked trusted";
+  const head = el("div", { className: "fb-head" }, [
+    el("span", { text: `Triage result · ${ticketId(i)}` }),
+    el("span", { text: `Logged ${r.loggedAt} by ${WORKSTATION}` }),
+  ]);
+
   const children = [
     el("h2", {}, [
-      el("span", { className: "fb-icon", text: r.correct ? "✓" : "✗", attrs: { "aria-hidden": "true" } }),
+      tag(r.correct ? "Pass" : "Fail", r.correct ? "ok" : "fail"),
       document.createTextNode(r.correct ? `Correct: this is ${verdictWord}.` : `Wrong call: this was ${verdictWord}.`),
     ]),
-    el("p", { className: "xp-breakdown", text: `${breakdown.join(" · ")} = ${signed(r.delta)} XP` }),
+    el("p", { className: "xp-breakdown", text: `${action} · ${breakdown.join(" · ")} = ${signed(r.delta)} XP` }),
     el("p", { text: email.explanation }),
   ];
 
@@ -492,8 +618,8 @@ function renderFeedback(email, r, i, { focus = true } = {}) {
         flagIds.map((id) => {
           const found = r.found.includes(id);
           return el("li", { className: found ? "found" : "missed" }, [
-            el("span", { className: "fr-status", text: found ? "✓ Found" : "! Missed" }),
-            document.createTextNode(email.redFlags[id]),
+            tag(found ? "Found" : "Missed", found ? "ok" : "amber"),
+            el("span", { text: email.redFlags[id] }),
           ]);
         }),
       ),
@@ -504,7 +630,7 @@ function renderFeedback(email, r, i, { focus = true } = {}) {
     children.push(
       el("p", {
         className: "best",
-        text: `You flagged ${plural(r.falseFlags.length, "thing")} that ${r.falseFlags.length === 1 ? "wasn't a red flag" : "weren't red flags"} (crossed out above).`,
+        text: `You flagged ${plural(r.falseFlags.length, "thing")} that ${r.falseFlags.length === 1 ? "wasn't a red flag" : "weren't red flags"} (marked NOT A FLAG above).`,
       }),
     );
   }
@@ -517,7 +643,7 @@ function renderFeedback(email, r, i, { focus = true } = {}) {
   next.addEventListener("click", isPast ? () => viewEmail(state.index) : nextEmail);
   children.push(next);
 
-  panel.replaceChildren(...children);
+  panel.replaceChildren(head, el("div", { className: "fb-body" }, children));
   panel.hidden = false;
   if (focus) {
     next.focus({ preventScroll: true });
@@ -614,7 +740,9 @@ function finishShift() {
   const falseFlags = state.results.reduce((s, r) => s + r.falseFlags.length, 0);
 
   $("results-time").textContent = formatClock(state.config.shiftEndHour * 60);
+  $("results-report-id").textContent = `SHIFT-${shiftCode()}-N${NIGHT}`;
   $("results-rank").textContent = rank;
+  $("results-title").textContent = correct === total ? "Shift complete. Queue clear." : "Shift complete.";
 
   const stats = [
     ["Correct calls", `${correct} / ${total}`],
@@ -628,8 +756,8 @@ function finishShift() {
 
   const { best, isNewBest } = saveNightResult(NIGHT, { xp: state.xp, rank });
   $("results-best").textContent = isNewBest
-    ? "New personal best!"
-    : `Personal best: ${best.bestXp} XP (${best.bestRank})`;
+    ? "New personal best. Saved to your file."
+    : `Your best on file: ${best.bestXp} XP, ${best.bestRank}`;
 
   renderReview();
   play("clockOut");
@@ -640,20 +768,25 @@ function finishShift() {
 function renderReview() {
   const emails = state.data.emails;
   const wrong = state.results
-    .map((result, i) => ({ result, email: emails[i] }))
+    .map((result, i) => ({ result, email: emails[i], i }))
     .filter(({ result }) => result && !result.correct);
 
   const list = $("review-list");
   $("review-summary").textContent = wrong.length
-    ? `${plural(wrong.length, "wrong call")} to learn from.`
-    : "No wrong calls. Clean shift.";
+    ? `${plural(wrong.length, "wrong call")} on tonight's log. Read them before your next shift.`
+    : "Nothing to follow up on. Every call was right.";
 
   list.replaceChildren(
-    ...wrong.map(({ result, email }) => {
+    ...wrong.map(({ result, email, i }) => {
       const action = result.choice === "phishing" ? "You reported it" : "You trusted it";
       const actual = email.verdict === "phishing" ? "it was phishing" : "it was legitimate";
       const missed = Object.keys(email.redFlags).filter((id) => !result.found.includes(id));
 
+      const head = el("div", { className: "review-head" }, [
+        tag("Fail", "fail"),
+        el("span", { text: ticketId(i) }),
+        el("span", { text: `Logged ${result.loggedAt}` }),
+      ]);
       const children = [
         el("h3", { text: email.subject }),
         el("p", { className: "review-call", text: `${action}, but ${actual}.` }),
@@ -667,8 +800,7 @@ function renderReview() {
         children.push(el("p", { className: "review-label", text: "No red flags: this email was safe to trust." }));
       }
       children.push(el("p", { className: "review-why", text: email.explanation }));
-      children[1].prepend(el("span", { text: "✗ ", attrs: { "aria-hidden": "true" } }));
-      return el("li", { className: "review-item" }, children);
+      return el("li", { className: "review-item" }, [head, el("div", { className: "review-body" }, children)]);
     }),
   );
 }
@@ -698,6 +830,30 @@ function validateData(data) {
 }
 
 function bindEvents() {
+  // Main menu and navigation
+  $("menu-start-btn").addEventListener("click", openBriefing);
+  $("menu-howto-btn").addEventListener("click", () => {
+    showScreen("howto");
+    $("howto-back-btn").focus({ preventScroll: true });
+  });
+  $("menu-settings-btn").addEventListener("click", () => $("settings-btn").click());
+  $("menu-credits-btn").addEventListener("click", () => $("credits-dialog").showModal());
+  $("credits-close").addEventListener("click", () => $("credits-dialog").close());
+  $("howto-back-btn").addEventListener("click", showMenu);
+  $("briefing-back-btn").addEventListener("click", showMenu);
+  $("results-menu-btn").addEventListener("click", showMenu);
+  $("logoff-btn").addEventListener("click", requestLogoff);
+  $("logoff-cancel").addEventListener("click", () => $("logoff-dialog").close());
+  $("logoff-confirm").addEventListener("click", () => {
+    $("logoff-dialog").close();
+    showMenu();
+  });
+  for (const id of ["credits-dialog", "logoff-dialog"]) {
+    $(id).addEventListener("click", (event) => {
+      if (event.target === $(id)) $(id).close();
+    });
+  }
+
   $("start-btn").addEventListener("click", startShift);
   $("replay-btn").addEventListener("click", startShift);
   $("report-btn").addEventListener("click", () => decide("phishing"));
@@ -801,6 +957,7 @@ function handleShortcut(event) {
 
 async function init() {
   bindEvents();
+  showScreen("menu");
   try {
     const response = await fetch(DATA_URL, { headers: { Accept: "application/json" } });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -808,12 +965,14 @@ async function init() {
     state.config = state.data.config;
     renderBriefing();
     buildBriefingDialog();
+    renderMemo();
+    renderMenu();
     updateHud();
   } catch (error) {
     console.error("Failed to load night data:", error);
-    $("start-btn").textContent = "Unavailable";
+    $("menu-start-btn").textContent = "Unavailable";
     const msg = $("load-error");
-    msg.textContent = "The shift couldn't load. Refresh the page to try again.";
+    msg.textContent = "Couldn't reach the shift schedule. Refresh the page to try again.";
     msg.hidden = false;
   }
 }

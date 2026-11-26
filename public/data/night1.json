@@ -1,6 +1,7 @@
 {
   "night": 1,
   "title": "Night 1: The Inbox",
+  "shiftDate": "2026-11-27",
   "config": {
     "shiftStartHour": 0,
     "shiftEndHour": 6,

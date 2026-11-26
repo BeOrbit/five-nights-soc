@@ -5,164 +5,431 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>5 Nights in the SOC</title>
   <meta name="description" content="A survival-style cybersecurity training game. Work the night shift in a security operations center and make it to 6 AM.">
+  <meta name="color-scheme" content="dark">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/style.css">
   <script type="module" src="js/night1.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <span class="brand-name">5 Nights in the SOC</span>
-      <span class="brand-night" id="night-label">Night 1</span>
-    </div>
-    <dl class="hud">
-      <div class="hud-item"><dt>Time</dt><dd id="hud-clock">12:00 AM</dd></div>
-      <div class="hud-item hud-progress">
-        <dt>Progress</dt>
-        <dd>
-          <span id="hud-progress-text">0 of 0 emails handled</span>
-          <span class="progress-track" id="hud-progress" role="progressbar" aria-label="Emails handled" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"><span class="progress-fill" id="hud-progress-fill"></span></span>
-        </dd>
-      </div>
-      <div class="hud-item"><dt>XP</dt><dd id="hud-xp">0</dd></div>
-      <div class="hud-item"><dt>Rank</dt><dd id="hud-rank">Intern</dd></div>
-    </dl>
-    <div class="toolbar">
-      <button type="button" class="icon-btn" id="help-btn" aria-label="Reopen the shift briefing" aria-haspopup="dialog" aria-keyshortcuts="Shift+/" hidden>
-        <span aria-hidden="true">?</span>
-      </button>
-      <button type="button" class="icon-btn" id="settings-btn" aria-label="Settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-dialog">
-        <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-      </button>
-    </div>
-  </header>
+<div class="desktop">
+  <main id="app" class="workspace">
 
-  <main id="app">
-    <!-- Screen 1: shift briefing -->
-    <section id="screen-briefing" class="screen briefing" aria-labelledby="briefing-title">
-      <div class="note">
-        <p class="note-meta">Kestrel Logistics · Security Operations Center</p>
-        <h1 id="briefing-title">Night 1: The Inbox</h1>
-        <p class="note-from" id="briefing-from"></p>
-        <div id="briefing-body"></div>
-        <ul class="legend">
-          <li><kbd>Hover</kbd> or <kbd>Tap</kbd> to inspect senders, links, and attachments</li>
-          <li><kbd>Click</kbd> anything suspicious to flag it (on a touch screen, tap it again)</li>
-          <li><kbd>Report</kbd> phishing · <kbd>Trust</kbd> legitimate mail</li>
-        </ul>
-        <h2 class="legend-title">Keyboard shortcuts</h2>
-        <ul class="legend shortcuts">
-          <li><kbd>R</kbd> Report as phishing</li>
-          <li><kbd>T</kbd> Trust as legitimate</li>
-          <li><kbd>←</kbd> <kbd>↑</kbd> Previous email · <kbd>→</kbd> <kbd>↓</kbd> Next email</li>
-          <li><kbd>Tab</kbd> then <kbd>Enter</kbd> Inspect and flag without a mouse</li>
-          <li><kbd>?</kbd> Reopen this briefing during the shift</li>
-        </ul>
-        <p class="best" id="briefing-best" hidden></p>
-        <button type="button" class="btn btn-primary" id="start-btn" disabled>Loading shift…</button>
+    <!-- ===== Login / main menu ===== -->
+    <section id="screen-menu" class="screen login" aria-labelledby="game-title">
+      <div class="login-brand">
+        <p class="wordmark"><span class="k-mark" aria-hidden="true"></span>Kestrel Logistics</p>
+        <p class="mono dim">Security Operations &middot; Workstation SOC-WS-07</p>
+
+        <h1 id="game-title" class="game-title">5 Nights in the SOC</h1>
+        <p class="tagline">Night shift. One analyst. Six hours until the day crew badges in.</p>
+
+        <div class="legal-banner" role="note" aria-label="Workstation notice">
+          <p class="banner-head">Notice to users</p>
+          <p>This workstation is the property of Kestrel Logistics. Use is limited to authorized personnel. All activity is logged and reviewed by the Security Operations Center.</p>
+          <p>Tonight, the Security Operations Center is you.</p>
+        </div>
+
+        <p class="mono dim small">Last logon: 11/26/2026 11:52 PM from SOC-WS-07 &middot; Domain KESTREL</p>
+      </div>
+
+      <div class="login-panel">
+        <h2 class="panel-head">Shift roster</h2>
+        <ol class="roster">
+          <li class="roster-row is-open">
+            <span class="roster-night mono">N1</span>
+            <span class="roster-info">
+              <span class="roster-title">Night 1: The Inbox</span>
+              <span class="roster-sub">Phishing triage &middot; 12:00 AM to 6:00 AM</span>
+              <span class="roster-sub mono" id="menu-best" hidden></span>
+            </span>
+            <span class="tag tag-ok">Open</span>
+            <button type="button" class="btn btn-primary roster-btn" id="menu-start-btn" disabled>Loading&hellip;</button>
+          </li>
+          <li class="roster-row is-locked" aria-disabled="true">
+            <span class="roster-night mono">N2</span>
+            <span class="roster-info">
+              <span class="roster-title">Night 2: The Terminal</span>
+              <span class="roster-sub">Clearance pending: complete Night 1</span>
+            </span>
+            <span class="tag tag-locked">Locked</span>
+          </li>
+          <li class="roster-row is-locked" aria-disabled="true">
+            <span class="roster-night mono">N3</span>
+            <span class="roster-info">
+              <span class="roster-title">Night 3: The Log Hunt</span>
+              <span class="roster-sub">Clearance pending: complete Night 2</span>
+            </span>
+            <span class="tag tag-locked">Locked</span>
+          </li>
+          <li class="roster-row is-locked" aria-disabled="true">
+            <span class="roster-night mono">N4</span>
+            <span class="roster-info">
+              <span class="roster-title">Night 4: Lockdown</span>
+              <span class="roster-sub">Clearance pending: complete Night 3</span>
+            </span>
+            <span class="tag tag-locked">Locked</span>
+          </li>
+          <li class="roster-row is-locked" aria-disabled="true">
+            <span class="roster-night mono">N5</span>
+            <span class="roster-info">
+              <span class="roster-title">Night 5: Full Incident</span>
+              <span class="roster-sub">Clearance pending: complete Night 4</span>
+            </span>
+            <span class="tag tag-locked">Locked</span>
+          </li>
+        </ol>
         <p class="error" id="load-error" role="alert" hidden></p>
+
+        <div class="menu-actions">
+          <button type="button" class="btn" id="menu-howto-btn">How to Play</button>
+          <button type="button" class="btn" id="menu-settings-btn" aria-haspopup="dialog">Settings</button>
+          <button type="button" class="btn" id="menu-credits-btn" aria-haspopup="dialog">Credits</button>
+        </div>
       </div>
     </section>
 
-    <!-- Screen 2: the inbox -->
-    <section id="screen-inbox" class="screen inbox" hidden>
-      <aside class="mail-list" aria-label="SOC inbox queue">
-        <h2>SOC inbox <span class="count" id="queue-count"></span></h2>
-        <ol id="email-list"></ol>
+    <!-- ===== How to Play: printed onboarding memo ===== -->
+    <section id="screen-howto" class="screen howto" hidden aria-labelledby="memo-title">
+      <article class="paper memo">
+        <header class="memo-head">
+          <p class="memo-org">Kestrel Logistics &middot; Security Operations &middot; Internal</p>
+          <h1 id="memo-title">Night Shift Onboarding: SOC Inbox Triage</h1>
+          <dl class="memo-fields">
+            <dt>Memo no.</dt><dd>KL-SOC-MEMO-0412</dd>
+            <dt>To</dt><dd>Night Shift Analyst, SOC-WS-07</dd>
+            <dt>From</dt><dd>Rhea Vance, SOC Manager</dd>
+            <dt>Date</dt><dd>November 20, 2026</dd>
+            <dt>Re</dt><dd>How we work the SOC inbox overnight</dd>
+          </dl>
+        </header>
+
+        <section class="memo-section">
+          <h2><span class="memo-num">1.</span> The job</h2>
+          <p>Employees forward anything that looks off to the SOC inbox. You work the queue one email at a time, oldest first. For each one, make a call:</p>
+          <ul>
+            <li><strong>Report</strong> it if it's phishing. It gets pulled from every mailbox.</li>
+            <li><strong>Trust</strong> it if it's legitimate. It goes back to the employee.</li>
+          </ul>
+          <p>Every email you close moves the clock. Clear the queue and you've made it to 6:00 AM.</p>
+        </section>
+
+        <section class="memo-section">
+          <h2><span class="memo-num">2.</span> Inspect before you decide</h2>
+          <p>Display names lie. Before you make a call, check:</p>
+          <ul>
+            <li><strong>The sender.</strong> Hover the name to see the real address. On a tablet or phone, tap it.</li>
+            <li><strong>Every link.</strong> Hover or tap to see where it actually goes. The text of a link means nothing.</li>
+            <li><strong>Attachments.</strong> Hover or tap to see the full file name and type. Watch for double extensions.</li>
+          </ul>
+        </section>
+
+        <section class="memo-section">
+          <h2><span class="memo-num">3.</span> Flag what's wrong</h2>
+          <p>When something in an email is a red flag, click it to flag it. On a touch screen, tap it once to inspect and again to flag. Click or tap again to take the flag off.</p>
+          <p>Flag what you can defend. Flagging everything costs you.</p>
+        </section>
+
+        <section class="memo-section">
+          <h2><span class="memo-num">4.</span> Scoring</h2>
+          <table class="memo-table">
+            <caption class="sr-only">XP for each action</caption>
+            <thead><tr><th scope="col">Action</th><th scope="col">XP</th></tr></thead>
+            <tbody id="memo-xp">
+              <tr><td>Correct call</td><td>&mdash;</td></tr>
+            </tbody>
+          </table>
+          <p>After each call you'll see what you found, what you missed, and why. Read it. The same tricks come back.</p>
+        </section>
+
+        <section class="memo-section">
+          <h2><span class="memo-num">5.</span> Ranks</h2>
+          <p>Your rank at the end of the shift depends on how much of the best possible score you earned.</p>
+          <table class="memo-table">
+            <caption class="sr-only">Ranks by share of the best possible score</caption>
+            <thead><tr><th scope="col">Rank</th><th scope="col">Score needed</th></tr></thead>
+            <tbody id="memo-ranks">
+              <tr><td>Intern</td><td>&mdash;</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="memo-section">
+          <h2><span class="memo-num">6.</span> Keyboard shortcuts</h2>
+          <table class="memo-table keys">
+            <caption class="sr-only">Keyboard shortcuts</caption>
+            <thead><tr><th scope="col">Key</th><th scope="col">Does</th></tr></thead>
+            <tbody>
+              <tr><td><kbd>R</kbd></td><td>Report the open email as phishing</td></tr>
+              <tr><td><kbd>T</kbd></td><td>Trust the open email as legitimate</td></tr>
+              <tr><td><kbd>&larr;</kbd> <kbd>&uarr;</kbd></td><td>Go back to an email you already closed</td></tr>
+              <tr><td><kbd>&rarr;</kbd> <kbd>&darr;</kbd></td><td>Go forward, or to the next email once you've made your call</td></tr>
+              <tr><td><kbd>Tab</kbd> <kbd>Enter</kbd></td><td>Move between parts of an email and flag them without a mouse</td></tr>
+              <tr><td><kbd>?</kbd></td><td>Reopen the shift handoff</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <footer class="memo-foot">
+          <p class="memo-sign">Questions go in the handoff log. Don't call me unless something is on fire.<br>R. Vance</p>
+          <p class="memo-form">KL-FORM 22-B rev. 3 &middot; Page 1 of 1</p>
+        </footer>
+      </article>
+
+      <aside class="howto-rail">
+        <p class="mono dim small">Printed 11/26/2026 11:49 PM<br>PRN-SOC-02 &middot; Tray 1</p>
+        <button type="button" class="btn" id="howto-back-btn">Back to main menu</button>
       </aside>
+    </section>
 
-      <div class="reader">
-        <article id="email-view" class="email" aria-live="polite"></article>
+    <!-- ===== Shift handoff (briefing) ===== -->
+    <section id="screen-briefing" class="screen" hidden aria-labelledby="briefing-title">
+      <div class="window">
+        <header class="titlebar">
+          <span class="tb-icon" aria-hidden="true"></span>
+          <span class="tb-title">Handoff Log: <span id="briefing-ticket">HANDOFF</span></span>
+          <span class="tb-meta">SOC-WS-07</span>
+        </header>
+        <div class="window-body handoff">
+          <dl class="ticket-fields">
+            <dt>Ticket</dt><dd class="mono" id="briefing-ticket-field">&mdash;</dd>
+            <dt>Opened by</dt><dd id="briefing-from">&mdash;</dd>
+            <dt>Assigned to</dt><dd>Night shift analyst</dd>
+            <dt>Shift</dt><dd class="mono" id="briefing-shift">12:00 AM to 6:00 AM</dd>
+            <dt>Priority</dt><dd>Routine</dd>
+            <dt>Status</dt><dd><span class="tag tag-amber">Awaiting acknowledgment</span></dd>
+          </dl>
 
-        <div class="actions" id="actions">
-          <p class="flag-count" id="flag-count">0 flagged</p>
-          <div class="action-buttons">
-            <button type="button" class="btn btn-report" id="report-btn" aria-keyshortcuts="R"><span aria-hidden="true">⚑</span> Report phishing</button>
-            <button type="button" class="btn btn-trust" id="trust-btn" aria-keyshortcuts="T"><span aria-hidden="true">✓</span> Trust</button>
+          <div class="handoff-note">
+            <h1 id="briefing-title">Night 1: The Inbox</h1>
+            <div id="briefing-body" class="prose"></div>
+
+            <h2 class="legend-title">Working the inbox</h2>
+            <ul class="legend">
+              <li><kbd>Hover</kbd> or <kbd>Tap</kbd> to inspect senders, links, and attachments</li>
+              <li><kbd>Click</kbd> anything suspicious to flag it (on a touch screen, tap it again)</li>
+              <li><kbd>Report</kbd> phishing &middot; <kbd>Trust</kbd> legitimate mail</li>
+            </ul>
+            <h2 class="legend-title">Keyboard shortcuts</h2>
+            <ul class="legend shortcuts">
+              <li><kbd>R</kbd> Report as phishing</li>
+              <li><kbd>T</kbd> Trust as legitimate</li>
+              <li><kbd>&larr;</kbd> <kbd>&uarr;</kbd> Previous email &middot; <kbd>&rarr;</kbd> <kbd>&darr;</kbd> Next email</li>
+              <li><kbd>Tab</kbd> then <kbd>Enter</kbd> Inspect and flag without a mouse</li>
+              <li><kbd>?</kbd> Reopen this handoff during the shift</li>
+            </ul>
+
+            <p class="best mono" id="briefing-best" hidden></p>
+            <div class="button-row">
+              <button type="button" class="btn btn-primary" id="start-btn" disabled>Loading shift&hellip;</button>
+              <button type="button" class="btn" id="briefing-back-btn">Back to main menu</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Mail triage (the inbox) ===== -->
+    <section id="screen-inbox" class="screen" hidden>
+      <div class="window">
+        <header class="titlebar">
+          <span class="tb-icon" aria-hidden="true"></span>
+          <span class="tb-title">Mail Triage: SOC Queue</span>
+          <span class="tb-meta">KL-MAIL-02</span>
+        </header>
+
+        <div class="window-body inbox">
+          <nav class="folders" aria-label="Mail folders">
+            <h2 class="pane-head">Folders</h2>
+            <ul>
+              <li class="folder is-active"><span>SOC Queue</span><span class="mono" id="folder-queue">0</span></li>
+              <li class="folder"><span>Reported</span><span class="mono" id="folder-reported">0</span></li>
+              <li class="folder"><span>Trusted</span><span class="mono" id="folder-trusted">0</span></li>
+            </ul>
+          </nav>
+
+          <aside class="mail-list" aria-label="SOC inbox queue">
+            <h2 class="pane-head">SOC Queue <span class="count" id="queue-count"></span></h2>
+            <ol id="email-list"></ol>
+          </aside>
+
+          <div class="reader">
+            <div class="actions" id="actions">
+              <p class="flag-count" id="flag-count">0 flagged</p>
+              <div class="action-buttons">
+                <button type="button" class="btn btn-report" id="report-btn" aria-keyshortcuts="R">Report phishing <kbd aria-hidden="true">R</kbd></button>
+                <button type="button" class="btn btn-trust" id="trust-btn" aria-keyshortcuts="T">Trust <kbd aria-hidden="true">T</kbd></button>
+              </div>
+            </div>
+
+            <p class="ticket-line mono" id="ticket-line"></p>
+            <article id="email-view" class="email" aria-live="polite"></article>
+
+            <section id="feedback" class="feedback" hidden aria-live="polite"></section>
           </div>
         </div>
 
-        <section id="feedback" class="feedback" hidden aria-live="polite"></section>
+        <footer class="statusbar">
+          <span>Connected to KL-MAIL-02</span>
+          <span id="status-queue">Queue: 0 open</span>
+          <span class="status-right">Mail filter 3.1 &middot; Signatures current</span>
+        </footer>
       </div>
     </section>
 
-    <!-- Screen 3: end of shift -->
-    <section id="screen-results" class="screen results" hidden aria-labelledby="results-title">
-      <div class="note">
-        <p class="note-meta" id="results-time">6:00 AM</p>
-        <h1 id="results-title">Shift complete</h1>
-        <p class="results-rank" id="results-rank"></p>
-        <dl class="stats" id="results-stats"></dl>
-        <p class="best" id="results-best"></p>
-        <section class="review" aria-labelledby="review-title">
-          <h2 id="review-title">Shift review</h2>
-          <p class="best" id="review-summary"></p>
-          <ol class="review-list" id="review-list"></ol>
-        </section>
-        <button type="button" class="btn btn-primary" id="replay-btn">Work the shift again</button>
+    <!-- ===== End of shift report ===== -->
+    <section id="screen-results" class="screen" hidden aria-labelledby="results-title">
+      <div class="window">
+        <header class="titlebar">
+          <span class="tb-icon" aria-hidden="true"></span>
+          <span class="tb-title">End of Shift Report: <span id="results-report-id">SHIFT</span></span>
+          <span class="tb-meta">SOC-WS-07</span>
+        </header>
+        <div class="window-body report">
+          <div class="report-summary">
+            <p class="mono dim small">Shift closed <span id="results-time">6:00 AM</span> &middot; Analyst: night shift, SOC-WS-07</p>
+            <h1 id="results-title">Shift complete</h1>
+            <p class="results-rank">Rank: <span id="results-rank"></span></p>
+            <dl class="stats" id="results-stats"></dl>
+            <p class="best mono" id="results-best"></p>
+            <div class="button-row">
+              <button type="button" class="btn btn-primary" id="replay-btn">Work the shift again</button>
+              <button type="button" class="btn" id="results-menu-btn">Log off to main menu</button>
+            </div>
+          </div>
+
+          <section class="review" aria-labelledby="review-title">
+            <h2 id="review-title" class="panel-head">Incidents for follow-up</h2>
+            <p class="best" id="review-summary"></p>
+            <ol class="review-list" id="review-list"></ol>
+          </section>
+        </div>
       </div>
     </section>
   </main>
 
-  <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+  <!-- ===== Taskbar ===== -->
+  <footer class="taskbar">
+    <button type="button" class="task-start" id="logoff-btn" hidden>
+      <span class="k-mark" aria-hidden="true"></span>Log off
+    </button>
+    <span class="task-window" id="task-window">SOC-WS-07</span>
 
-  <!-- Shift briefing, reopened mid-shift with the "?" button -->
-  <dialog id="briefing-dialog" class="dialog" aria-labelledby="briefing-dialog-title">
-    <div class="dialog-inner">
-      <h2 id="briefing-dialog-title">Shift briefing</h2>
-      <p class="note-from" id="briefing-dialog-from"></p>
-      <div id="briefing-dialog-body"></div>
-      <div id="briefing-dialog-legend"></div>
-      <div class="dialog-actions">
-        <button type="button" class="btn btn-primary" id="briefing-dialog-close">Back to the inbox</button>
+    <div class="tray">
+      <div class="tray-shift" id="tray-shift" hidden>
+        <dl class="hud">
+          <div class="hud-item hud-progress">
+            <dt class="sr-only">Progress</dt>
+            <dd>
+              <span id="hud-progress-text">0 of 0 emails handled</span>
+              <span class="progress-track" id="hud-progress" role="progressbar" aria-label="Emails handled" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"><span class="progress-fill" id="hud-progress-fill"></span></span>
+            </dd>
+          </div>
+          <div class="hud-item"><dt>XP</dt><dd id="hud-xp">0</dd></div>
+          <div class="hud-item hud-rank-item"><dt>Rank</dt><dd id="hud-rank">Intern</dd></div>
+        </dl>
       </div>
+      <button type="button" class="tray-btn" id="help-btn" aria-label="Reopen the shift handoff" aria-haspopup="dialog" aria-keyshortcuts="Shift+/" hidden>?</button>
+      <button type="button" class="tray-btn" id="settings-btn" aria-label="Settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-dialog">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
+      </button>
+      <span class="tray-clock">
+        <span class="sr-only">Shift clock: </span><span id="hud-clock">12:00 AM</span>
+      </span>
     </div>
-  </dialog>
+  </footer>
+</div>
 
-  <!-- Settings -->
-  <dialog id="settings-dialog" class="dialog" aria-labelledby="settings-title">
-    <div class="dialog-inner">
-      <h2 id="settings-title">Settings</h2>
-      <div class="settings-list">
-        <label class="setting">
-          <input type="checkbox" id="setting-sound">
-          <span><strong>Sound effects</strong><span class="setting-help">Short tones for flags and verdicts.</span></span>
-        </label>
-        <label class="setting">
-          <input type="checkbox" id="setting-motion">
-          <span><strong>Reduce motion</strong><span class="setting-help">Turns off animations and smooth scrolling. Your system setting is always respected too.</span></span>
-        </label>
-        <label class="setting">
-          <input type="checkbox" id="setting-text">
-          <span><strong>Larger text</strong><span class="setting-help">Makes all text about 25% bigger.</span></span>
-        </label>
-      </div>
+<!-- Subtle monitor glow and scanlines. Purely decorative; off with reduce motion. -->
+<div class="crt" aria-hidden="true"></div>
 
-      <div class="danger-zone">
-        <h3>Saved progress</h3>
-        <p class="setting-help">Clears your saved XP and best score for every night. Settings are kept.</p>
-        <button type="button" class="btn btn-danger-outline" id="reset-btn" aria-haspopup="dialog">Reset progress…</button>
-      </div>
+<div id="tooltip" class="tooltip" role="tooltip" hidden></div>
 
-      <p class="settings-status" id="settings-status" role="status" aria-live="polite"></p>
-
-      <div class="dialog-actions">
-        <button type="button" class="btn btn-primary" id="settings-close">Done</button>
-      </div>
+<!-- Shift handoff, reopened mid-shift with the "?" button -->
+<dialog id="briefing-dialog" class="dialog" aria-labelledby="briefing-dialog-title">
+  <h2 class="dialog-title" id="briefing-dialog-title">Shift handoff</h2>
+  <div class="dialog-inner">
+    <p class="dim small" id="briefing-dialog-from"></p>
+    <div id="briefing-dialog-body" class="prose"></div>
+    <div id="briefing-dialog-legend"></div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-primary" id="briefing-dialog-close">Back to the queue</button>
     </div>
-  </dialog>
+  </div>
+</dialog>
 
-  <!-- Reset confirmation -->
-  <dialog id="reset-dialog" class="dialog dialog-small" aria-labelledby="reset-title" aria-describedby="reset-desc">
-    <div class="dialog-inner">
-      <h2 id="reset-title"><span aria-hidden="true">⚠</span> Reset all progress?</h2>
-      <p id="reset-desc">This deletes your saved XP and best score for every night. It can't be undone.</p>
-      <div class="dialog-actions">
-        <button type="button" class="btn btn-secondary" id="reset-cancel" autofocus>Cancel</button>
-        <button type="button" class="btn btn-report" id="reset-confirm">Yes, reset progress</button>
-      </div>
+<!-- Settings -->
+<dialog id="settings-dialog" class="dialog" aria-labelledby="settings-title">
+  <h2 class="dialog-title" id="settings-title">Workstation settings</h2>
+  <div class="dialog-inner">
+    <div class="settings-list">
+      <label class="setting">
+        <input type="checkbox" id="setting-sound">
+        <span><strong>Sound effects</strong><span class="setting-help">Short tones when you flag, make a call, or clock out.</span></span>
+      </label>
+      <label class="setting">
+        <input type="checkbox" id="setting-motion">
+        <span><strong>Reduce motion</strong><span class="setting-help">Turns off animation, smooth scrolling, and the monitor scanlines. Your system setting is always respected too.</span></span>
+      </label>
+      <label class="setting">
+        <input type="checkbox" id="setting-text">
+        <span><strong>Larger text</strong><span class="setting-help">Makes all text about 25% bigger.</span></span>
+      </label>
     </div>
-  </dialog>
+
+    <div class="danger-zone">
+      <h3>Saved progress</h3>
+      <p class="setting-help">Wipes your saved XP and best score for every night. Settings stay.</p>
+      <button type="button" class="btn btn-danger-outline" id="reset-btn" aria-haspopup="dialog">Reset progress&hellip;</button>
+    </div>
+
+    <p class="settings-status" id="settings-status" role="status" aria-live="polite"></p>
+
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-primary" id="settings-close">Done</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Reset confirmation -->
+<dialog id="reset-dialog" class="dialog dialog-small" aria-labelledby="reset-title" aria-describedby="reset-desc">
+  <h2 class="dialog-title is-danger" id="reset-title">Reset all progress?</h2>
+  <div class="dialog-inner">
+    <p id="reset-desc">This deletes your saved XP and best score for every night. There is no backup tape for this one. It can't be undone.</p>
+    <div class="dialog-actions">
+      <button type="button" class="btn" id="reset-cancel" autofocus>Cancel</button>
+      <button type="button" class="btn btn-report" id="reset-confirm">Yes, reset progress</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Log off mid-shift confirmation -->
+<dialog id="logoff-dialog" class="dialog dialog-small" aria-labelledby="logoff-title" aria-describedby="logoff-desc">
+  <h2 class="dialog-title" id="logoff-title">Log off SOC-WS-07?</h2>
+  <div class="dialog-inner">
+    <p id="logoff-desc">Your shift isn't over. If you log off now, tonight's progress is lost and the queue goes unworked.</p>
+    <div class="dialog-actions">
+      <button type="button" class="btn" id="logoff-cancel" autofocus>Stay on shift</button>
+      <button type="button" class="btn btn-report" id="logoff-confirm">Log off</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Credits -->
+<dialog id="credits-dialog" class="dialog" aria-labelledby="credits-title">
+  <h2 class="dialog-title" id="credits-title">About SOC Console</h2>
+  <div class="dialog-inner prose">
+    <p class="mono dim small">SOC Console 4.2 &middot; build 2026.11 &middot; Licensed to Kestrel Logistics</p>
+    <p><strong>5 Nights in the SOC</strong> was designed and built by Javon Mentore.</p>
+    <p>It's practice for the Security+ (SY0-801) exam objectives, written from scratch. It is not affiliated with or endorsed by CompTIA.</p>
+    <p>Kestrel Logistics and every person, domain, and email in the game are fictional. Any resemblance to your actual inbox is the point.</p>
+    <p>Type: IBM Plex Sans and IBM Plex Mono by IBM, used under the <a href="fonts/OFL.txt">SIL Open Font License 1.1</a>. Sound effects are generated in your browser.</p>
+    <p>Source: <a href="https://github.com/BeOrbit/five-nights-soc" rel="noopener noreferrer">github.com/BeOrbit/five-nights-soc</a></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-primary" id="credits-close">Close</button>
+    </div>
+  </div>
+</dialog>
 </body>
 </html>
