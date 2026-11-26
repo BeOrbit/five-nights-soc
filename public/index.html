@@ -18,6 +18,13 @@
     </div>
     <dl class="hud">
       <div class="hud-item"><dt>Time</dt><dd id="hud-clock">12:00 AM</dd></div>
+      <div class="hud-item hud-progress">
+        <dt>Progress</dt>
+        <dd>
+          <span id="hud-progress-text">0 of 0 emails handled</span>
+          <span class="progress-track" id="hud-progress" role="progressbar" aria-label="Emails handled" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"><span class="progress-fill" id="hud-progress-fill"></span></span>
+        </dd>
+      </div>
       <div class="hud-item"><dt>XP</dt><dd id="hud-xp">0</dd></div>
       <div class="hud-item"><dt>Rank</dt><dd id="hud-rank">Intern</dd></div>
     </dl>
@@ -32,9 +39,16 @@
         <p class="note-from" id="briefing-from"></p>
         <div id="briefing-body"></div>
         <ul class="legend">
-          <li><kbd>Hover</kbd> to inspect senders, links, and attachments</li>
-          <li><kbd>Click</kbd> anything suspicious to flag it</li>
+          <li><kbd>Hover</kbd> or <kbd>Tap</kbd> to inspect senders, links, and attachments</li>
+          <li><kbd>Click</kbd> anything suspicious to flag it (on a touch screen, tap it again)</li>
           <li><kbd>Report</kbd> phishing · <kbd>Trust</kbd> legitimate mail</li>
+        </ul>
+        <h2 class="legend-title">Keyboard shortcuts</h2>
+        <ul class="legend shortcuts">
+          <li><kbd>R</kbd> Report as phishing</li>
+          <li><kbd>T</kbd> Trust as legitimate</li>
+          <li><kbd>←</kbd> <kbd>↑</kbd> Previous email · <kbd>→</kbd> <kbd>↓</kbd> Next email</li>
+          <li><kbd>Tab</kbd> then <kbd>Enter</kbd> Inspect and flag without a mouse</li>
         </ul>
         <p class="best" id="briefing-best" hidden></p>
         <button type="button" class="btn btn-primary" id="start-btn" disabled>Loading shift…</button>
@@ -55,8 +69,8 @@
         <div class="actions" id="actions">
           <p class="flag-count" id="flag-count">0 flagged</p>
           <div class="action-buttons">
-            <button type="button" class="btn btn-report" id="report-btn">Report phishing</button>
-            <button type="button" class="btn btn-trust" id="trust-btn">Trust</button>
+            <button type="button" class="btn btn-report" id="report-btn" aria-keyshortcuts="R">Report phishing</button>
+            <button type="button" class="btn btn-trust" id="trust-btn" aria-keyshortcuts="T">Trust</button>
           </div>
         </div>
 
@@ -72,6 +86,11 @@
         <p class="results-rank" id="results-rank"></p>
         <dl class="stats" id="results-stats"></dl>
         <p class="best" id="results-best"></p>
+        <section class="review" aria-labelledby="review-title">
+          <h2 id="review-title">Shift review</h2>
+          <p class="best" id="review-summary"></p>
+          <ol class="review-list" id="review-list"></ol>
+        </section>
         <button type="button" class="btn btn-primary" id="replay-btn">Work the shift again</button>
       </div>
     </section>

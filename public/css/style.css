@@ -85,7 +85,26 @@ button { font: inherit; }
   padding: 2px 8px;
 }
 
-.hud { display: flex; gap: 24px; margin: 0; }
+.hud { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 0; }
+
+.hud-progress dd { display: grid; gap: 4px; }
+#hud-progress-text { font-size: 13px; font-weight: 500; color: var(--text); }
+.progress-track {
+  display: block;
+  width: 100%;
+  min-width: 140px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+.progress-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
 
 .hud-item dt {
   font-size: 11px;
@@ -142,6 +161,15 @@ main { padding: 24px 20px 48px; max-width: 1200px; margin: 0 auto; }
   gap: 6px;
   font-size: 14px;
 }
+
+.legend-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: -8px 0 0;
+}
+.legend.shortcuts { margin-top: 8px; }
 
 kbd {
   font: 12px var(--mono);
@@ -219,6 +247,7 @@ kbd {
 }
 
 .mail-item.is-current { background: var(--panel-raised); border-left-color: var(--accent); }
+.mail-item.is-done.is-viewing { background: var(--panel-raised); border-left-color: var(--muted); }
 .mail-item.is-queued { opacity: 0.45; }
 .mail-item.is-queued .mi-subject { filter: blur(3px); }
 
@@ -408,6 +437,29 @@ kbd {
 .stats dt { color: var(--muted); }
 .stats dd { margin: 0; font: 600 15px var(--mono); text-align: right; }
 
+.review { margin: 8px 0 22px; }
+.review h2 { font-size: 18px; margin-bottom: 4px; }
+.review-list { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 12px; }
+.review-item {
+  padding: 14px 16px;
+  background: var(--panel-raised);
+  border-left: 3px solid var(--danger);
+  border-radius: 8px;
+  font-size: 14px;
+}
+.review-item h3 { margin: 0 0 4px; font-size: 15px; }
+.review-item p { margin: 0 0 8px; }
+.review-call { color: var(--danger); font-weight: 600; }
+.review-label {
+  font: 600 11px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--warn);
+}
+.review-flags { margin: 0 0 10px; padding-left: 18px; display: grid; gap: 4px; }
+.review-why { color: var(--muted); }
+.review-item p:last-child { margin-bottom: 0; }
+
 /* ---------- Tooltip ---------- */
 
 .tooltip {
@@ -426,6 +478,7 @@ kbd {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
 }
 .tooltip .tt-label { color: var(--muted); display: block; }
+.tooltip .tt-hint { color: var(--accent); display: block; margin-top: 4px; }
 
 /* ---------- Small screens ---------- */
 

@@ -21,7 +21,8 @@ const $ = (id) => document.getElementById(id);
 const state = {
   data: null,
   config: null,
-  index: 0,
+  index: 0, // the email waiting for a verdict (the "current" one)
+  viewing: 0, // the email on screen; can be an earlier, already-handled one
   xp: 0,
   minutes: 0,
   flagged: new Set(),
@@ -31,6 +32,10 @@ const state = {
 
 // Tooltip text for each inspectable element, kept out of the DOM.
 const tooltips = new WeakMap();
+
+// Pointer tracking, so touch taps can inspect before they flag.
+const pointer = { type: "mouse", down: false };
+let tipOwner = null;
 
 /* ---------- Small helpers ---------- */
 
@@ -94,10 +99,30 @@ function currentEmail() {
   return state.data.emails[state.index];
 }
 
+function handledCount() {
+  return state.results.filter(Boolean).length;
+}
+
+/** True when the on-screen email can't be flagged or decided. */
+function isLocked() {
+  return state.resolved || state.viewing !== state.index;
+}
+
 /* ---------- HUD ---------- */
+
+function updateProgress() {
+  const total = state.data.emails.length;
+  const done = handledCount();
+  $("hud-progress-text").textContent = `${done} of ${total} emails handled`;
+  const bar = $("hud-progress");
+  bar.setAttribute("aria-valuemax", String(total));
+  bar.setAttribute("aria-valuenow", String(done));
+  $("hud-progress-fill").style.width = `${total ? (done / total) * 100 : 0}%`;
+}
 
 function updateHud({ bump = false } = {}) {
   $("hud-clock").textContent = formatClock(state.config.shiftStartHour * 60 + state.minutes);
+  updateProgress();
   const xpNode = $("hud-xp");
   xpNode.textContent = String(state.xp);
   $("hud-rank").textContent = rankFor(state.xp);
@@ -145,13 +170,14 @@ function renderMailList() {
       let status = "is-queued";
       if (result) status = "is-done";
       else if (i === state.index) status = "is-current";
+      if (i === state.viewing) status += " is-viewing";
 
       const item = el("li", { className: `mail-item ${status}` }, [
         el("span", { className: "mi-from", text: email.from.name }),
         el("span", { className: "mi-time", text: email.received }),
         el("span", { className: "mi-subject", text: email.subject }),
       ]);
-      if (status === "is-current") item.setAttribute("aria-current", "true");
+      if (i === state.viewing) item.setAttribute("aria-current", "true");
       if (result) {
         const action = result.choice === "phishing" ? "Reported" : "Trusted";
         item.append(
@@ -164,7 +190,7 @@ function renderMailList() {
       return item;
     }),
   );
-  const left = emails.length - state.results.length;
+  const left = emails.length - handledCount();
   $("queue-count").textContent = `(${left} left)`;
 }
 
@@ -294,7 +320,7 @@ function updateFlagCount() {
 }
 
 function toggleFlag(node) {
-  if (state.resolved) return;
+  if (isLocked()) return;
   const id = node.dataset.flagId;
   const nowFlagged = !state.flagged.has(id);
   if (nowFlagged) state.flagged.add(id);
@@ -306,12 +332,17 @@ function toggleFlag(node) {
 
 /* ---------- Tooltip ---------- */
 
-function showTooltip(node) {
+function showTooltip(node, { touch = false } = {}) {
   const tip = tooltips.get(node);
   if (!tip) return;
   const box = $("tooltip");
   box.replaceChildren(el("span", { className: "tt-label", text: tip.label }), document.createTextNode(tip.value));
+  if (touch) {
+    const flagged = state.flagged.has(node.dataset.flagId);
+    box.append(el("span", { className: "tt-hint", text: flagged ? "Tap again to unflag" : "Tap again to flag" }));
+  }
   box.hidden = false;
+  tipOwner = node;
 
   const rect = node.getBoundingClientRect();
   const boxRect = box.getBoundingClientRect();
@@ -326,12 +357,24 @@ function showTooltip(node) {
 
 function hideTooltip() {
   $("tooltip").hidden = true;
+  tipOwner = null;
+}
+
+/** Touch: the first tap on an inspectable item shows its details; the next tap flags it. */
+function handleTap(node) {
+  if (isLocked()) return;
+  if (tooltips.has(node) && tipOwner !== node) {
+    showTooltip(node, { touch: true });
+    return;
+  }
+  toggleFlag(node);
+  if (tooltips.has(node)) showTooltip(node, { touch: true });
 }
 
 /* ---------- Verdicts and scoring ---------- */
 
 function decide(choice) {
-  if (state.resolved) return;
+  if (isLocked()) return;
   state.resolved = true;
   hideTooltip();
 
@@ -349,27 +392,32 @@ function decide(choice) {
 
   state.xp += delta;
   state.minutes += minutesPerEmail();
-  state.results[state.index] = {
+  const result = {
     choice,
     correct,
-    found: found.length,
-    total: flagIds.length,
-    falseFlags: falseFlags.length,
+    flagged: [...state.flagged],
+    found,
+    falseFlags,
+    callXp,
+    flagXp,
+    falseXp,
+    delta,
   };
+  state.results[state.index] = result;
 
-  revealFlags(email);
-  renderFeedback(email, { correct, found, falseFlags, callXp, flagXp, falseXp, delta });
+  revealFlags(email, state.flagged);
+  renderFeedback(email, result, state.index);
   $("actions").hidden = true;
   updateHud({ bump: true });
   renderMailList();
 }
 
-function revealFlags(email) {
+function revealFlags(email, flaggedIds) {
   const view = $("email-view");
   view.classList.add("is-resolved");
   for (const node of view.querySelectorAll(".flaggable")) {
     const id = node.dataset.flagId;
-    const flagged = state.flagged.has(id);
+    const flagged = flaggedIds.has(id);
     const real = isRedFlag(email, id);
     node.classList.remove("is-flagged");
     node.removeAttribute("tabindex");
@@ -381,7 +429,7 @@ function revealFlags(email) {
   }
 }
 
-function renderFeedback(email, r) {
+function renderFeedback(email, r, i, { focus = true } = {}) {
   const panel = $("feedback");
   const verdictWord = email.verdict === "phishing" ? "phishing" : "legitimate";
   panel.className = `feedback ${r.correct ? "is-correct" : "is-wrong"}`;
@@ -422,19 +470,20 @@ function renderFeedback(email, r) {
     );
   }
 
+  const isPast = i !== state.index;
   const isLast = state.index === state.data.emails.length - 1;
-  const next = el("button", {
-    className: "btn btn-primary",
-    text: isLast ? "Clock out" : "Next email",
-    attrs: { type: "button" },
-  });
-  next.addEventListener("click", nextEmail);
+  let label = isLast ? "Clock out" : "Next email";
+  if (isPast) label = state.resolved ? "Back to latest email" : "Back to current email";
+  const next = el("button", { className: "btn btn-primary", text: label, attrs: { type: "button" } });
+  next.addEventListener("click", isPast ? () => viewEmail(state.index) : nextEmail);
   children.push(next);
 
   panel.replaceChildren(...children);
   panel.hidden = false;
-  next.focus({ preventScroll: true });
-  panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  if (focus) {
+    next.focus({ preventScroll: true });
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 }
 
 /* ---------- Flow ---------- */
@@ -442,11 +491,58 @@ function renderFeedback(email, r) {
 function loadEmail() {
   state.flagged.clear();
   state.resolved = false;
+  state.viewing = state.index;
   $("feedback").hidden = true;
   $("actions").hidden = false;
   updateFlagCount();
   renderEmail(currentEmail());
   renderMailList();
+}
+
+/**
+ * Show any handled email, or the current one, without changing the game.
+ * Earlier emails are read-only: they show the verdict and the flag review.
+ */
+function viewEmail(i) {
+  hideTooltip();
+  state.viewing = i;
+  const email = state.data.emails[i];
+  renderEmail(email);
+
+  const result = state.results[i];
+  if (result) {
+    revealFlags(email, i === state.index ? state.flagged : new Set(result.flagged));
+    renderFeedback(email, result, i, { focus: false });
+    $("actions").hidden = true;
+  } else {
+    // The current, undecided email: restore any flags placed before looking back.
+    for (const node of $("email-view").querySelectorAll(".flaggable")) {
+      const flagged = state.flagged.has(node.dataset.flagId);
+      node.classList.toggle("is-flagged", flagged);
+      node.setAttribute("aria-pressed", String(flagged));
+    }
+    $("feedback").hidden = true;
+    $("actions").hidden = false;
+  }
+  renderMailList();
+}
+
+function goPrevious() {
+  if (state.viewing === 0) return false;
+  viewEmail(state.viewing - 1);
+  return true;
+}
+
+function goNext() {
+  if (state.viewing < state.index) {
+    viewEmail(state.viewing + 1);
+    return true;
+  }
+  if (state.resolved) {
+    nextEmail();
+    return true;
+  }
+  return false;
 }
 
 function nextEmail() {
@@ -461,6 +557,7 @@ function nextEmail() {
 
 function startShift() {
   state.index = 0;
+  state.viewing = 0;
   state.xp = 0;
   state.minutes = 0;
   state.results = [];
@@ -473,9 +570,9 @@ function finishShift() {
   const rank = rankFor(state.xp);
   const total = state.data.emails.length;
   const correct = state.results.filter((r) => r.correct).length;
-  const found = state.results.reduce((s, r) => s + r.found, 0);
-  const flags = state.results.reduce((s, r) => s + r.total, 0);
-  const falseFlags = state.results.reduce((s, r) => s + r.falseFlags, 0);
+  const found = state.results.reduce((s, r) => s + r.found.length, 0);
+  const flags = state.data.emails.reduce((s, e) => s + Object.keys(e.redFlags).length, 0);
+  const falseFlags = state.results.reduce((s, r) => s + r.falseFlags.length, 0);
 
   $("results-time").textContent = formatClock(state.config.shiftEndHour * 60);
   $("results-rank").textContent = rank;
@@ -495,7 +592,44 @@ function finishShift() {
     ? "New personal best!"
     : `Personal best: ${best.bestXp} XP (${best.bestRank})`;
 
+  renderReview();
   showScreen("results");
+}
+
+/** End-of-shift review: every wrong call, the red flags missed, and why. */
+function renderReview() {
+  const emails = state.data.emails;
+  const wrong = state.results
+    .map((result, i) => ({ result, email: emails[i] }))
+    .filter(({ result }) => result && !result.correct);
+
+  const list = $("review-list");
+  $("review-summary").textContent = wrong.length
+    ? `${plural(wrong.length, "wrong call")} to learn from.`
+    : "No wrong calls. Clean shift.";
+
+  list.replaceChildren(
+    ...wrong.map(({ result, email }) => {
+      const action = result.choice === "phishing" ? "You reported it" : "You trusted it";
+      const actual = email.verdict === "phishing" ? "it was phishing" : "it was legitimate";
+      const missed = Object.keys(email.redFlags).filter((id) => !result.found.includes(id));
+
+      const children = [
+        el("h3", { text: email.subject }),
+        el("p", { className: "review-call", text: `${action}, but ${actual}.` }),
+      ];
+      if (missed.length) {
+        children.push(
+          el("p", { className: "review-label", text: `Missed red flags (${missed.length})` }),
+          el("ul", { className: "review-flags" }, missed.map((id) => el("li", { text: email.redFlags[id] }))),
+        );
+      } else if (email.verdict === "legitimate") {
+        children.push(el("p", { className: "review-label", text: "No red flags: this email was safe to trust." }));
+      }
+      children.push(el("p", { className: "review-why", text: email.explanation }));
+      return el("li", { className: "review-item" }, children);
+    }),
+  );
 }
 
 /* ---------- Setup ---------- */
@@ -528,11 +662,22 @@ function bindEvents() {
   $("report-btn").addEventListener("click", () => decide("phishing"));
   $("trust-btn").addEventListener("click", () => decide("legitimate"));
 
+  // Remember how the last press happened (mouse, pen, or touch).
+  document.addEventListener("pointerdown", (event) => {
+    pointer.type = event.pointerType || "mouse";
+    pointer.down = true;
+    if (!event.target.closest?.(".flaggable")) hideTooltip();
+  });
+  document.addEventListener("pointerup", () => (pointer.down = false));
+  document.addEventListener("pointercancel", () => (pointer.down = false));
+
   // One set of listeners on the email view handles every flaggable element.
   const view = $("email-view");
   view.addEventListener("click", (event) => {
     const node = event.target.closest(".flaggable");
-    if (node) toggleFlag(node);
+    if (!node) return;
+    if (pointer.type === "touch") handleTap(node);
+    else toggleFlag(node);
   });
   view.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
@@ -541,20 +686,65 @@ function bindEvents() {
     event.preventDefault();
     toggleFlag(node);
   });
-  view.addEventListener("mouseover", (event) => {
+  // Hover inspects with a mouse or pen; touch taps are handled in the click listener.
+  view.addEventListener("pointerover", (event) => {
+    if (event.pointerType === "touch") return;
     const node = event.target.closest(".flaggable");
-    if (node && !state.resolved) showTooltip(node);
+    if (node && !isLocked()) showTooltip(node);
   });
-  view.addEventListener("mouseout", (event) => {
+  view.addEventListener("pointerout", (event) => {
+    if (event.pointerType === "touch") return;
     const node = event.target.closest(".flaggable");
     if (node && !node.contains(event.relatedTarget)) hideTooltip();
   });
+  // Keyboard focus inspects too, but focus caused by a tap or click doesn't.
   view.addEventListener("focusin", (event) => {
+    if (pointer.down) return;
     const node = event.target.closest(".flaggable");
-    if (node && !state.resolved) showTooltip(node);
+    if (node && !isLocked()) showTooltip(node);
   });
-  view.addEventListener("focusout", hideTooltip);
+  // Only close the tooltip if it belongs to the element losing focus,
+  // so clicking a new element doesn't hide the tooltip it just opened.
+  view.addEventListener("focusout", (event) => {
+    if (event.target.closest(".flaggable") === tipOwner) hideTooltip();
+  });
   window.addEventListener("scroll", hideTooltip, { passive: true });
+
+  document.addEventListener("keydown", handleShortcut);
+}
+
+/** R = report, T = trust, arrow keys = move between emails. */
+function handleShortcut(event) {
+  if ($("screen-inbox").hidden) return;
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.target.closest?.("input, textarea, select, [contenteditable]")) return;
+
+  let handled = false;
+  switch (event.key) {
+    case "r":
+    case "R":
+      if (!event.repeat && !isLocked()) {
+        decide("phishing");
+        handled = true;
+      }
+      break;
+    case "t":
+    case "T":
+      if (!event.repeat && !isLocked()) {
+        decide("legitimate");
+        handled = true;
+      }
+      break;
+    case "ArrowDown":
+    case "ArrowRight":
+      handled = goNext();
+      break;
+    case "ArrowUp":
+    case "ArrowLeft":
+      handled = goPrevious();
+      break;
+  }
+  if (handled) event.preventDefault();
 }
 
 async function init() {

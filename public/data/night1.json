@@ -23,8 +23,8 @@
     "paragraphs": [
       "Welcome to the night shift. You're the only analyst on until 6 AM.",
       "Kestrel employees forward anything that looks off to the SOC inbox. Your job is to decide on each one: Report it as phishing, or Trust it as legitimate.",
-      "Don't take anything at face value. Hover over the sender to see the real address. Hover over links to see where they really go. Check attachment names closely.",
-      "When something looks wrong, click it to flag it. A correct flag earns XP, but a wrong one costs you, so don't just click everything.",
+      "Don't take anything at face value. Hover over the sender to see the real address. Hover over links to see where they really go. Check attachment names closely. On a touch screen, tap instead of hovering.",
+      "When something looks wrong, click it to flag it (on a touch screen, tap it a second time). A correct flag earns XP, but a wrong one costs you, so don't just click everything.",
       "The clock moves forward each time you close out an email. Make it to 6 AM."
     ]
   },
