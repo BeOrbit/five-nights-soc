@@ -1,0 +1,24 @@
+// Cloudflare Workers configuration for 5 Nights in the SOC.
+// Deploys to https://five-nights-soc.beorbit.workers.dev
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "five-nights-soc",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-20",
+  "workers_dev": true,
+
+  "assets": {
+    // Everything in public/ is served as a static file.
+    "directory": "./public",
+    // Lets the Worker fetch static files through env.ASSETS.
+    "binding": "ASSETS",
+    // Run the Worker on every request so it can add security headers
+    // (and, later, route /api/* to the leaderboard).
+    "run_worker_first": true,
+    "not_found_handling": "404-page"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}

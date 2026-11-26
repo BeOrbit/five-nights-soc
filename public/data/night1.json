@@ -1,0 +1,184 @@
+{
+  "night": 1,
+  "title": "Night 1: The Inbox",
+  "config": {
+    "shiftStartHour": 0,
+    "shiftEndHour": 6,
+    "tooltips": true,
+    "xp": {
+      "correctCall": 100,
+      "wrongCall": -50,
+      "redFlagFound": 25,
+      "falseFlag": -10
+    },
+    "ranks": [
+      { "name": "Intern", "minPercent": 0 },
+      { "name": "Tier 1 Analyst", "minPercent": 40 },
+      { "name": "Tier 2 Analyst", "minPercent": 70 },
+      { "name": "Night Shift Lead", "minPercent": 90 }
+    ]
+  },
+  "briefing": {
+    "from": "Rhea Vance, SOC Manager",
+    "paragraphs": [
+      "Welcome to the night shift. You're the only analyst on until 6 AM.",
+      "Kestrel employees forward anything that looks off to the SOC inbox. Your job is to decide on each one: Report it as phishing, or Trust it as legitimate.",
+      "Don't take anything at face value. Hover over the sender to see the real address. Hover over links to see where they really go. Check attachment names closely.",
+      "When something looks wrong, click it to flag it. A correct flag earns XP, but a wrong one costs you, so don't just click everything.",
+      "The clock moves forward each time you close out an email. Make it to 6 AM."
+    ]
+  },
+  "emails": [
+    {
+      "id": "n1-01",
+      "forwardedBy": "Tyler Brooks, Executive Assistant",
+      "forwardNote": "Diane never texts me like this. Can you check before I buy anything?",
+      "from": { "name": "Diane Okafor", "address": "diane.okafor.exec@gmail.com" },
+      "to": "tyler.brooks@kestrel-logistics.com",
+      "subject": "Quick favor, need gift cards ASAP",
+      "received": "11:41 PM",
+      "body": [
+        ["Tyler,"],
+        [
+          "Are you at your desk? I need a quick favor. ",
+          "I'm in back-to-back meetings with a client and can't take calls."
+        ],
+        [
+          { "id": "giftcards", "text": "Please buy five $200 gift cards for client appreciation and send me photos of the card numbers. " },
+          { "id": "urgency", "text": "I need them within the hour." }
+        ],
+        [
+          { "id": "secrecy", "text": "Keep this between us for now, I want it to be a surprise. " },
+          "I'll reimburse you tomorrow."
+        ],
+        ["Diane", "\nSent from my phone"]
+      ],
+      "attachments": [],
+      "verdict": "phishing",
+      "redFlags": {
+        "sender": "The display name says Diane Okafor, but the address is a personal Gmail account. Executives use their company address for company business.",
+        "giftcards": "Gift cards are a classic scam payment. Once someone has the card numbers, the money is gone and can't be traced.",
+        "urgency": "\"Within the hour\" creates pressure so you act before you think or check with anyone.",
+        "secrecy": "Asking you to keep it quiet stops you from checking with a coworker who would spot the scam."
+      },
+      "explanation": "This is CEO fraud, a kind of business email compromise. The attacker pretends to be an executive and uses authority, urgency, and secrecy to rush an employee into sending money. Check by calling the executive on a number you already know, not by replying."
+    },
+    {
+      "id": "n1-02",
+      "forwardedBy": "Rosa Delgado, Warehouse Receiving",
+      "forwardNote": "We get carrier notices all day, but I don't recognize this one.",
+      "from": { "name": "FreightLine Delivery Notice", "address": "notice@freightline-parcel-alerts.com" },
+      "to": "receiving@kestrel-logistics.com",
+      "subject": "Delivery failed: see invoice",
+      "received": "11:58 PM",
+      "body": [
+        [{ "id": "greeting", "text": "Dear Customer," }],
+        [
+          "We were unable to deliver your package (tracking #FL-30471-88) because of an unpaid customs fee. ",
+          "Please open the attached invoice and pay the balance to schedule redelivery."
+        ],
+        [{ "id": "urgency", "text": "If payment is not received within 48 hours, your package will be returned to sender." }],
+        ["FreightLine Customer Care"]
+      ],
+      "attachments": [
+        {
+          "id": "attachment",
+          "displayName": "Invoice_8841.pdf",
+          "fileName": "Invoice_8841.pdf.exe",
+          "fileType": "Application (.exe)",
+          "size": "184 KB"
+        }
+      ],
+      "verdict": "phishing",
+      "redFlags": {
+        "attachment": "The real file name is Invoice_8841.pdf.exe. The \".pdf\" is fake. It's a program that runs when opened, most likely malware. Windows hides known extensions by default, which is why this trick works.",
+        "sender": "Kestrel doesn't use a carrier called FreightLine, and the domain is a long, made-up \"alerts\" domain, not a carrier's real site.",
+        "greeting": "\"Dear Customer\" means the sender doesn't know who you are. A real carrier would name the account or shipper.",
+        "urgency": "A 48-hour deadline plus a surprise fee is pressure to open the attachment without checking."
+      },
+      "explanation": "This is a malware delivery email. A fake shipping notice is a believable lure at a logistics company. The double extension (.pdf.exe) is the giveaway: always check the full file name, and never open an executable attachment from an email."
+    },
+    {
+      "id": "n1-03",
+      "forwardedBy": "Jordan Pike, Dispatch",
+      "forwardNote": "Looks like it's from IT. Should I click it? I really can't lose dispatch access tonight.",
+      "from": { "name": "Kestrel IT Service Desk", "address": "it-support@kestre1-logistics.com" },
+      "to": "jordan.pike@kestrel-logistics.com",
+      "subject": "Your password expires in 24 hours",
+      "received": "12:07 AM",
+      "body": [
+        ["Hello Jordan,"],
+        [{ "id": "urgency", "text": "Our records show your network password expires in 24 hours." }],
+        [{ "id": "keep", "text": "To keep your current password and avoid losing access to email and the dispatch system, confirm your account using the button below." }],
+        [{ "id": "link", "text": "Keep My Current Password", "href": "https://verify-acct.net/kestrel/login" }],
+        ["Thank you,", "\nKestrel IT Service Desk"]
+      ],
+      "attachments": [],
+      "verdict": "phishing",
+      "redFlags": {
+        "sender": "Look closely: kestre1-logistics.com uses the number 1 in place of the letter l. This is a lookalike domain made to pass a quick glance.",
+        "link": "The button text looks harmless, but the link goes to verify-acct.net, not a Kestrel site. That's a credential harvesting page.",
+        "urgency": "A 24-hour countdown pushes you to act before you check.",
+        "keep": "Real IT password policies make you change an expiring password, not keep it. Offering to \"keep your current password\" is bait to get it typed into a fake page."
+      },
+      "explanation": "This is credential phishing with a lookalike (typosquatted) domain. Read sender domains letter by letter, hover every link before clicking, and change your password only through the company's own portal, never through an email link."
+    },
+    {
+      "id": "n1-04",
+      "forwardedBy": "Alex Chen, Fleet Operations",
+      "forwardNote": "Meeting moved with no warning. Is this real?",
+      "from": { "name": "Sam Rivera", "address": "sam.rivera@kestrel-logistics.com" },
+      "to": "fleet-ops@kestrel-logistics.com",
+      "subject": "Team sync moved to Thursday",
+      "received": "12:15 AM",
+      "body": [
+        ["Hi team,"],
+        [
+          "Wednesday's fleet ops sync conflicts with the quarterly safety audit, so I've moved it to Thursday at 10:00 AM in Conference Room B. ",
+          "Same agenda as before."
+        ],
+        ["Please bring your route utilization numbers for October."],
+        ["Thanks,", "\nSam"]
+      ],
+      "calendar": {
+        "title": "Fleet Ops Weekly Sync",
+        "when": "Thursday, 10:00 to 10:30 AM",
+        "where": "Conference Room B, HQ 2nd floor",
+        "organizer": "sam.rivera@kestrel-logistics.com"
+      },
+      "attachments": [],
+      "verdict": "legitimate",
+      "redFlags": {},
+      "explanation": "This one is legitimate. It comes from a real kestrel-logistics.com address, gives a clear business reason for the change, has no links or attachments, and asks for nothing sensitive. A surprise schedule change is not a red flag by itself. Reporting every real email wastes the team's time and wears down trust in the SOC."
+    },
+    {
+      "id": "n1-05",
+      "forwardedBy": "Megan Torres, Human Resources",
+      "forwardNote": "I don't know who shared this. It mentions salaries, so I didn't want to ignore it.",
+      "from": { "name": "FileHarbor", "address": "share-notify@fileharbor-docs.info" },
+      "to": "megan.torres@kestrel-logistics.com",
+      "subject": "A document was shared with you",
+      "received": "12:26 AM",
+      "body": [
+        [{ "id": "greeting", "text": "Dear user," }],
+        [{ "id": "lure", "text": "A document has been shared with you: Q4_Salary_Adjustments.xlsx" }],
+        [
+          "Click below to view the document. ",
+          { "id": "creds", "text": "You will need to sign in with your email password to open it." }
+        ],
+        [{ "id": "link", "text": "Open Document", "href": "http://secure-docview.co/open?id=88213" }],
+        ["This link will expire in 12 hours.", "\nFileHarbor Sharing Service"]
+      ],
+      "attachments": [],
+      "verdict": "phishing",
+      "redFlags": {
+        "greeting": "\"Dear user\" is generic. A real share notice names the person who shared the file with you.",
+        "sender": "Kestrel doesn't use a file-sharing service called FileHarbor, and no coworker's name appears anywhere in the message.",
+        "lure": "A salary spreadsheet is bait. It plays on curiosity, especially for someone in HR.",
+        "creds": "Asking for your email password to open a shared file is a credential grab. Company files open through your normal single sign-on.",
+        "link": "The link uses plain http:// (no encryption) and goes to secure-docview.co, an unknown domain that has nothing to do with the sender."
+      },
+      "explanation": "This is credential phishing disguised as a file-share notice. No named sharer, a generic greeting, a curiosity lure, and an unencrypted link to an unrelated domain add up to a fake login page. Report it and check with the supposed sharer some other way."
+    }
+  ]
+}

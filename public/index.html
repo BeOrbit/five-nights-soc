@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>5 Nights in the SOC</title>
+  <meta name="description" content="A survival-style cybersecurity training game. Work the night shift in a security operations center and make it to 6 AM.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/night1.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">5 Nights in the SOC</span>
+      <span class="brand-night" id="night-label">Night 1</span>
+    </div>
+    <dl class="hud">
+      <div class="hud-item"><dt>Time</dt><dd id="hud-clock">12:00 AM</dd></div>
+      <div class="hud-item"><dt>XP</dt><dd id="hud-xp">0</dd></div>
+      <div class="hud-item"><dt>Rank</dt><dd id="hud-rank">Intern</dd></div>
+    </dl>
+  </header>
+
+  <main id="app">
+    <!-- Screen 1: shift briefing -->
+    <section id="screen-briefing" class="screen briefing" aria-labelledby="briefing-title">
+      <div class="note">
+        <p class="note-meta">Kestrel Logistics · Security Operations Center</p>
+        <h1 id="briefing-title">Night 1: The Inbox</h1>
+        <p class="note-from" id="briefing-from"></p>
+        <div id="briefing-body"></div>
+        <ul class="legend">
+          <li><kbd>Hover</kbd> to inspect senders, links, and attachments</li>
+          <li><kbd>Click</kbd> anything suspicious to flag it</li>
+          <li><kbd>Report</kbd> phishing · <kbd>Trust</kbd> legitimate mail</li>
+        </ul>
+        <p class="best" id="briefing-best" hidden></p>
+        <button type="button" class="btn btn-primary" id="start-btn" disabled>Loading shift…</button>
+        <p class="error" id="load-error" role="alert" hidden></p>
+      </div>
+    </section>
+
+    <!-- Screen 2: the inbox -->
+    <section id="screen-inbox" class="screen inbox" hidden>
+      <aside class="mail-list" aria-label="SOC inbox queue">
+        <h2>SOC inbox <span class="count" id="queue-count"></span></h2>
+        <ol id="email-list"></ol>
+      </aside>
+
+      <div class="reader">
+        <article id="email-view" class="email" aria-live="polite"></article>
+
+        <div class="actions" id="actions">
+          <p class="flag-count" id="flag-count">0 flagged</p>
+          <div class="action-buttons">
+            <button type="button" class="btn btn-report" id="report-btn">Report phishing</button>
+            <button type="button" class="btn btn-trust" id="trust-btn">Trust</button>
+          </div>
+        </div>
+
+        <section id="feedback" class="feedback" hidden aria-live="polite"></section>
+      </div>
+    </section>
+
+    <!-- Screen 3: end of shift -->
+    <section id="screen-results" class="screen results" hidden aria-labelledby="results-title">
+      <div class="note">
+        <p class="note-meta" id="results-time">6:00 AM</p>
+        <h1 id="results-title">Shift complete</h1>
+        <p class="results-rank" id="results-rank"></p>
+        <dl class="stats" id="results-stats"></dl>
+        <p class="best" id="results-best"></p>
+        <button type="button" class="btn btn-primary" id="replay-btn">Work the shift again</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+</body>
+</html>
