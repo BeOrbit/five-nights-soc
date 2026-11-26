@@ -70,3 +70,51 @@ export function saveNightResult(night, { xp, rank }) {
   }
   return { best: progress.nights[night], isNewBest };
 }
+
+/** Delete all saved progress (best XP and rank for every night). */
+export function clearProgress() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/* ---------- Settings ---------- */
+
+const SETTINGS_KEY = "fns.settings.v1";
+
+export const DEFAULT_SETTINGS = Object.freeze({
+  sound: false,
+  reduceMotion: false,
+  largeText: false,
+});
+
+/** Saved settings, with anything missing or malformed replaced by the default. */
+export function loadSettings() {
+  const settings = { ...DEFAULT_SETTINGS };
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return settings;
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== "object") return settings;
+    for (const key of Object.keys(DEFAULT_SETTINGS)) {
+      if (typeof data[key] === "boolean") settings[key] = data[key];
+    }
+  } catch {
+    // Fall back to defaults.
+  }
+  return settings;
+}
+
+export function saveSettings(settings) {
+  const clean = {};
+  for (const key of Object.keys(DEFAULT_SETTINGS)) clean[key] = settings[key] === true;
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(clean));
+    return true;
+  } catch {
+    return false;
+  }
+}

@@ -12,6 +12,8 @@
  */
 
 import { getNightBest, saveNightResult } from "./storage.js";
+import { initSettings, scrollBehavior } from "./settings.js";
+import { play } from "./sound.js";
 
 const NIGHT = 1;
 const DATA_URL = "data/night1.json";
@@ -139,7 +141,31 @@ function showScreen(name) {
   for (const id of ["screen-briefing", "screen-inbox", "screen-results"]) {
     $(id).hidden = id !== `screen-${name}`;
   }
+  $("help-btn").hidden = name !== "inbox";
   window.scrollTo(0, 0);
+}
+
+/** The "?" button: the same briefing, in a dialog, without leaving the shift. */
+function buildBriefingDialog() {
+  const { briefing } = state.data;
+  $("briefing-dialog-from").textContent = `Note from ${briefing.from}`;
+  $("briefing-dialog-body").replaceChildren(...briefing.paragraphs.map((text) => el("p", { text })));
+  // Reuse the legend and shortcut lists from the briefing screen so they never drift apart.
+  const lists = document.querySelectorAll("#screen-briefing .legend, #screen-briefing .legend-title");
+  $("briefing-dialog-legend").replaceChildren(...[...lists].map((node) => node.cloneNode(true)));
+}
+
+function openBriefingDialog() {
+  if ($("screen-inbox").hidden) return;
+  hideTooltip();
+  $("briefing-dialog").showModal();
+}
+
+/** After "Reset progress", stop showing the old best score anywhere. */
+function onProgressReset() {
+  $("briefing-best").hidden = true;
+  $("briefing-best").textContent = "";
+  if (!$("screen-results").hidden) $("results-best").textContent = "No saved best score.";
 }
 
 function renderBriefing() {
@@ -149,10 +175,8 @@ function renderBriefing() {
   $("briefing-body").replaceChildren(...briefing.paragraphs.map((text) => el("p", { text })));
 
   const best = getNightBest(NIGHT);
-  if (best) {
-    $("briefing-best").textContent = `Personal best: ${best.bestXp} XP (${best.bestRank})`;
-    $("briefing-best").hidden = false;
-  }
+  $("briefing-best").hidden = !best;
+  if (best) $("briefing-best").textContent = `Personal best: ${best.bestXp} XP (${best.bestRank})`;
 
   const start = $("start-btn");
   start.textContent = "Start shift";
@@ -178,15 +202,21 @@ function renderMailList() {
         el("span", { className: "mi-subject", text: email.subject }),
       ]);
       if (i === state.viewing) item.setAttribute("aria-current", "true");
+      // Status is always spelled out in text (and an icon), never color alone.
       if (result) {
         const action = result.choice === "phishing" ? "Reported" : "Trusted";
         item.append(
           el("span", {
             className: `mi-badge ${result.correct ? "right" : "wrong"}`,
-            text: `${action} · ${result.correct ? "correct" : "wrong"}`,
+            text: `${result.correct ? "✓" : "✗"} ${action} · ${result.correct ? "correct" : "wrong"}`,
           }),
         );
+      } else if (i === state.index) {
+        item.append(el("span", { className: "mi-badge now", text: "▸ Now" }));
+      } else {
+        item.append(el("span", { className: "sr-only", text: "Not opened yet" }));
       }
+      if (result && i === state.viewing) item.append(el("span", { className: "mi-badge viewing", text: "◉ Viewing" }));
       return item;
     }),
   );
@@ -328,6 +358,7 @@ function toggleFlag(node) {
   node.classList.toggle("is-flagged", nowFlagged);
   node.setAttribute("aria-pressed", String(nowFlagged));
   updateFlagCount();
+  play(nowFlagged ? "flag" : "unflag");
 }
 
 /* ---------- Tooltip ---------- */
@@ -342,7 +373,10 @@ function showTooltip(node, { touch = false } = {}) {
     box.append(el("span", { className: "tt-hint", text: flagged ? "Tap again to unflag" : "Tap again to flag" }));
   }
   box.hidden = false;
+  if (tipOwner && tipOwner !== node) tipOwner.removeAttribute("aria-describedby");
   tipOwner = node;
+  // Screen readers announce the tooltip as the focused element's description.
+  node.setAttribute("aria-describedby", "tooltip");
 
   const rect = node.getBoundingClientRect();
   const boxRect = box.getBoundingClientRect();
@@ -357,6 +391,7 @@ function showTooltip(node, { touch = false } = {}) {
 
 function hideTooltip() {
   $("tooltip").hidden = true;
+  tipOwner?.removeAttribute("aria-describedby");
   tipOwner = null;
 }
 
@@ -405,6 +440,7 @@ function decide(choice) {
   };
   state.results[state.index] = result;
 
+  play(correct ? "correct" : "wrong");
   revealFlags(email, state.flagged);
   renderFeedback(email, result, state.index);
   $("actions").hidden = true;
@@ -439,7 +475,10 @@ function renderFeedback(email, r, i, { focus = true } = {}) {
   if (r.falseFlags.length) breakdown.push(`${signed(r.falseXp)} for ${plural(r.falseFlags.length, "false flag")}`);
 
   const children = [
-    el("h2", { text: r.correct ? `Correct: this is ${verdictWord}.` : `Wrong call: this was ${verdictWord}.` }),
+    el("h2", {}, [
+      el("span", { className: "fb-icon", text: r.correct ? "✓" : "✗", attrs: { "aria-hidden": "true" } }),
+      document.createTextNode(r.correct ? `Correct: this is ${verdictWord}.` : `Wrong call: this was ${verdictWord}.`),
+    ]),
     el("p", { className: "xp-breakdown", text: `${breakdown.join(" · ")} = ${signed(r.delta)} XP` }),
     el("p", { text: email.explanation }),
   ];
@@ -453,7 +492,7 @@ function renderFeedback(email, r, i, { focus = true } = {}) {
         flagIds.map((id) => {
           const found = r.found.includes(id);
           return el("li", { className: found ? "found" : "missed" }, [
-            el("span", { className: "fr-status", text: found ? "Found" : "Missed" }),
+            el("span", { className: "fr-status", text: found ? "✓ Found" : "! Missed" }),
             document.createTextNode(email.redFlags[id]),
           ]);
         }),
@@ -482,7 +521,7 @@ function renderFeedback(email, r, i, { focus = true } = {}) {
   panel.hidden = false;
   if (focus) {
     next.focus({ preventScroll: true });
-    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    panel.scrollIntoView({ behavior: scrollBehavior(), block: "nearest" });
   }
 }
 
@@ -552,7 +591,7 @@ function nextEmail() {
     return;
   }
   loadEmail();
-  $("email-view").scrollIntoView({ behavior: "smooth", block: "start" });
+  $("email-view").scrollIntoView({ behavior: scrollBehavior(), block: "start" });
 }
 
 function startShift() {
@@ -593,6 +632,7 @@ function finishShift() {
     : `Personal best: ${best.bestXp} XP (${best.bestRank})`;
 
   renderReview();
+  play("clockOut");
   showScreen("results");
 }
 
@@ -627,6 +667,7 @@ function renderReview() {
         children.push(el("p", { className: "review-label", text: "No red flags: this email was safe to trust." }));
       }
       children.push(el("p", { className: "review-why", text: email.explanation }));
+      children[1].prepend(el("span", { text: "✗ ", attrs: { "aria-hidden": "true" } }));
       return el("li", { className: "review-item" }, children);
     }),
   );
@@ -661,6 +702,12 @@ function bindEvents() {
   $("replay-btn").addEventListener("click", startShift);
   $("report-btn").addEventListener("click", () => decide("phishing"));
   $("trust-btn").addEventListener("click", () => decide("legitimate"));
+  $("help-btn").addEventListener("click", openBriefingDialog);
+  $("briefing-dialog-close").addEventListener("click", () => $("briefing-dialog").close());
+  $("briefing-dialog").addEventListener("click", (event) => {
+    if (event.target === $("briefing-dialog")) $("briefing-dialog").close();
+  });
+  initSettings({ onReset: onProgressReset });
 
   // Remember how the last press happened (mouse, pen, or touch).
   document.addEventListener("pointerdown", (event) => {
@@ -716,11 +763,16 @@ function bindEvents() {
 /** R = report, T = trust, arrow keys = move between emails. */
 function handleShortcut(event) {
   if ($("screen-inbox").hidden) return;
+  if (document.querySelector("dialog[open]")) return; // dialogs own the keyboard
   if (event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.target.closest?.("input, textarea, select, [contenteditable]")) return;
 
   let handled = false;
   switch (event.key) {
+    case "?":
+      openBriefingDialog();
+      handled = true;
+      break;
     case "r":
     case "R":
       if (!event.repeat && !isLocked()) {
@@ -755,6 +807,7 @@ async function init() {
     state.data = validateData(await response.json());
     state.config = state.data.config;
     renderBriefing();
+    buildBriefingDialog();
     updateHud();
   } catch (error) {
     console.error("Failed to load night data:", error);
