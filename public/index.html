@@ -10,7 +10,7 @@
   <link rel="preload" href="fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/style.css">
-  <script type="module" src="js/night1.js"></script>
+  <script type="module" src="js/app.js"></script>
 </head>
 <body>
 <div class="desktop">
@@ -47,13 +47,15 @@
             <span class="tag tag-ok">Open</span>
             <button type="button" class="btn btn-primary roster-btn" id="menu-start-btn" disabled>Loading&hellip;</button>
           </li>
-          <li class="roster-row is-locked" aria-disabled="true">
+          <li class="roster-row is-locked" id="roster-n2" aria-disabled="true">
             <span class="roster-night mono">N2</span>
             <span class="roster-info">
               <span class="roster-title">Night 2: The Terminal</span>
-              <span class="roster-sub">Clearance pending: complete Night 1</span>
+              <span class="roster-sub" id="roster-n2-sub">Clearance pending: complete Night 1</span>
+              <span class="roster-sub mono" id="menu-n2-best" hidden></span>
             </span>
-            <span class="tag tag-locked">Locked</span>
+            <span class="tag tag-locked" id="roster-n2-status">Locked</span>
+            <button type="button" class="btn btn-primary roster-btn" id="menu-n2-btn" hidden>Start Night 2</button>
           </li>
           <li class="roster-row is-locked" aria-disabled="true">
             <span class="roster-night mono">N3</span>
@@ -171,9 +173,52 @@
           </table>
         </section>
 
+        <section class="memo-section memo-addendum" aria-labelledby="memo-n2-title">
+          <p class="memo-org">Addendum A &middot; added November 27, 2026</p>
+          <h2 id="memo-n2-title"><span class="memo-num">7.</span> Forensic cases (Night 2 on)</h2>
+          <p>Some nights there's no inbox. You get a case number, a read-only SSH session on a server we think was broken into, and a case file to fill out before 6:00 AM.</p>
+          <ul>
+            <li><strong>The server is evidence.</strong> The session is read-only: anything that would change a file is refused, and network tools are switched off so you never touch the attacker's systems.</li>
+            <li><strong>Every command costs time.</strong> Each one moves the clock <span id="memo-n2-minutes">5</span> minutes, so you get about <span id="memo-n2-commands">72</span> before the day crew takes over. Typos, <kbd>help</kbd>, <kbd>history</kbd>, and <kbd>clear</kbd> are free.</li>
+            <li><strong>Start with the case notes</strong> in your home folder, then the logs in <code>/var/log</code>. Files whose names start with a dot are hidden from a plain <code>ls</code>; use <code>ls -a</code>.</li>
+            <li><strong>Narrow it down.</strong> <code>grep</code>, <code>head</code>, and <code>tail</code> read from a pipe, so <code>cat /var/log/syslog | grep CRON | tail -n 5</code> works. One command at a time: no <code>;</code> or <code>&amp;&amp;</code>.</li>
+            <li><strong>Evidence logs itself.</strong> When a key piece of evidence appears on your screen, it's added to the evidence log and you earn XP. How you got it there doesn't matter.</li>
+          </ul>
+        </section>
+
+        <section class="memo-section">
+          <h2><span class="memo-num">8.</span> The case file</h2>
+          <p>The case file sits next to the terminal. Fill it in as you go. Each field has a <strong>?</strong> tip if you're not sure what it's asking. When you're confident, file the report; that closes the session. At 6:00 AM whatever you've filled in is filed as is, and blank answers count as wrong.</p>
+          <table class="memo-table">
+            <caption class="sr-only">Night 2 XP for each result</caption>
+            <thead><tr><th scope="col">Result</th><th scope="col">XP</th></tr></thead>
+            <tbody id="memo-n2-xp">
+              <tr><td>Correct answer</td><td>&mdash;</td></tr>
+            </tbody>
+          </table>
+          <p>Ranks work the same way as on the inbox: a share of the best possible score for the night.</p>
+        </section>
+
+        <section class="memo-section">
+          <h2><span class="memo-num">9.</span> Terminal keys</h2>
+          <table class="memo-table keys">
+            <caption class="sr-only">Terminal keys</caption>
+            <thead><tr><th scope="col">Key</th><th scope="col">Does</th></tr></thead>
+            <tbody>
+              <tr><td><kbd>Enter</kbd></td><td>Run the command</td></tr>
+              <tr><td><kbd>Tab</kbd></td><td>Complete a command or path (press again to list the choices)</td></tr>
+              <tr><td><kbd>&uarr;</kbd> <kbd>&darr;</kbd></td><td>Step through commands you already ran</td></tr>
+              <tr><td><kbd>Ctrl</kbd> <kbd>L</kbd> &middot; <kbd>Ctrl</kbd> <kbd>C</kbd></td><td>Clear the screen &middot; cancel the line</td></tr>
+              <tr><td><kbd>Esc</kbd> then <kbd>Tab</kbd></td><td>Leave the terminal for the case file</td></tr>
+              <tr><td><kbd>Shift</kbd> <kbd>Tab</kbd></td><td>Read the full output of the last command</td></tr>
+            </tbody>
+          </table>
+          <p>On a phone or tablet, Tab and the arrow keys are buttons under the command line.</p>
+        </section>
+
         <footer class="memo-foot">
           <p class="memo-sign">Questions go in the handoff log. Don't call me unless something is on fire.<br>R. Vance</p>
-          <p class="memo-form">KL-FORM 22-B rev. 3 &middot; Page 1 of 1</p>
+          <p class="memo-form">KL-FORM 22-B rev. 4 &middot; Page 1 of 1</p>
         </footer>
       </article>
 
@@ -307,6 +352,175 @@
         </div>
       </div>
     </section>
+
+    <!-- ===== Night 2: case handoff ===== -->
+    <section id="screen-n2-briefing" class="screen" hidden aria-labelledby="n2-briefing-title">
+      <div class="window">
+        <header class="titlebar">
+          <span class="tb-icon" aria-hidden="true"></span>
+          <span class="tb-title">Handoff Log: <span id="n2-briefing-ticket">CASE</span></span>
+          <span class="tb-meta">SOC-WS-07</span>
+        </header>
+        <div class="window-body handoff">
+          <dl class="ticket-fields">
+            <dt>Case</dt><dd class="mono" id="n2-ticket-field">&mdash;</dd>
+            <dt>Opened by</dt><dd id="n2-briefing-from">&mdash;</dd>
+            <dt>Assigned to</dt><dd>Night shift analyst</dd>
+            <dt>Server</dt><dd class="mono" id="n2-briefing-server">&mdash;</dd>
+            <dt>Shift</dt><dd class="mono" id="n2-briefing-shift">12:00 AM to 6:00 AM</dd>
+            <dt>Clock</dt><dd id="n2-briefing-time">&mdash;</dd>
+            <dt>Priority</dt><dd id="n2-briefing-priority">&mdash;</dd>
+            <dt>Status</dt><dd><span class="tag tag-amber">Awaiting acknowledgment</span></dd>
+          </dl>
+
+          <div class="handoff-note">
+            <h1 id="n2-briefing-title">Night 2: The Terminal</h1>
+            <div id="n2-briefing-body" class="prose"></div>
+
+            <h2 class="legend-title">Working the terminal</h2>
+            <ul class="legend">
+              <li>Type a command and press <kbd>Enter</kbd>. Type <kbd>help</kbd> to list commands.</li>
+              <li>Every command moves the clock. Typos, <kbd>help</kbd>, <kbd>history</kbd>, and <kbd>clear</kbd> are free.</li>
+              <li>Evidence you turn up is logged automatically and earns XP.</li>
+              <li>The session is read-only: nothing you type can change the server.</li>
+            </ul>
+            <h2 class="legend-title">Keyboard</h2>
+            <ul class="legend shortcuts">
+              <li><kbd>Tab</kbd> Complete a command or path</li>
+              <li><kbd>&uarr;</kbd> <kbd>&darr;</kbd> Earlier commands</li>
+              <li><kbd>Ctrl</kbd> <kbd>L</kbd> Clear the screen &middot; <kbd>Ctrl</kbd> <kbd>C</kbd> Cancel the line</li>
+              <li><kbd>Esc</kbd> then <kbd>Tab</kbd> Leave the terminal &middot; <kbd>Shift</kbd> <kbd>Tab</kbd> Read the output</li>
+            </ul>
+
+            <p class="best mono" id="n2-briefing-best" hidden></p>
+            <div class="button-row">
+              <button type="button" class="btn btn-primary" id="n2-start-btn">Acknowledge and connect</button>
+              <button type="button" class="btn" id="n2-briefing-back-btn">Back to main menu</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Night 2: the investigation ===== -->
+    <section id="screen-terminal" class="screen" hidden aria-labelledby="terminal-title">
+      <div class="window">
+        <header class="titlebar">
+          <span class="tb-icon" aria-hidden="true"></span>
+          <span class="tb-title" id="terminal-title">soc-analyst@kl-rpt-01: SSH (read-only)</span>
+          <span class="tb-meta">KL-IR-2026-0047</span>
+        </header>
+
+        <div class="window-body investigation">
+          <div class="term">
+            <div class="term-output" id="term-output" role="log" aria-live="off" aria-label="Terminal output" tabindex="0"></div>
+            <div class="term-line">
+              <label class="term-prompt" id="term-prompt" for="term-input">$</label>
+              <input class="term-input" id="term-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" aria-describedby="term-hint">
+            </div>
+            <div class="term-keys" id="term-keys" role="group" aria-label="Terminal keys">
+              <button type="button" class="btn" data-key="tab" aria-label="Complete (Tab)">Tab</button>
+              <button type="button" class="btn" data-key="up" aria-label="Previous command">&uarr;</button>
+              <button type="button" class="btn" data-key="down" aria-label="Next command">&darr;</button>
+            </div>
+            <p class="sr-only" id="term-live" aria-live="polite"></p>
+          </div>
+
+          <aside class="case-pane" aria-label="Case notes">
+            <div class="case-tabs" role="tablist" aria-label="Case notes">
+              <button type="button" class="case-tab" role="tab" id="tab-evidence" aria-controls="panel-evidence" aria-selected="true">Evidence <span class="mono" id="tab-evidence-count">0/5</span></button>
+              <button type="button" class="case-tab" role="tab" id="tab-casefile" aria-controls="panel-casefile" aria-selected="false" tabindex="-1">Case file <span class="mono" id="tab-casefile-count">0/5</span></button>
+            </div>
+
+            <div class="case-panel" role="tabpanel" id="panel-evidence" aria-labelledby="tab-evidence" tabindex="0">
+              <h2 class="sr-only">Evidence log</h2>
+              <ol class="evidence-list" id="evidence-list"></ol>
+              <p class="evidence-empty" id="evidence-empty">Nothing logged yet. Evidence you turn up in the terminal lands here automatically.</p>
+              <p class="case-tip">Fill in the <strong>Case file</strong> tab as you go. It's filed as is at 6:00 AM.</p>
+            </div>
+
+            <div class="case-panel" role="tabpanel" id="panel-casefile" aria-labelledby="tab-casefile" tabindex="0" hidden>
+              <h2 class="sr-only">Case file</h2>
+              <p class="cf-intro">Answer from the evidence. Blank answers count as wrong. <span class="cf-hint">Press ? next to a field for a tip.</span></p>
+              <div class="cf-fields" id="cf-fields"></div>
+              <div class="cf-submit">
+                <p class="error" id="cf-summary" role="alert" hidden></p>
+                <button type="button" class="btn btn-primary" id="cf-submit-btn">File case report</button>
+                <p class="cf-note">Filing closes your session. At 6:00 AM the case file is filed as is.</p>
+              </div>
+            </div>
+
+            <dl class="session-stats" aria-label="Session">
+              <dt>Server time</dt><dd id="session-time">12:00 AM</dd>
+              <dt>Commands run</dt><dd id="session-commands">0</dd>
+              <dt>Commands left</dt><dd id="session-left">0</dd>
+            </dl>
+          </aside>
+        </div>
+
+        <footer class="statusbar">
+          <span>Connected to kl-rpt-01 &middot; read-only</span>
+          <span id="term-status-left">72 commands left</span>
+          <span class="status-right term-hint" id="term-hint">Tab completes &middot; &uarr; &darr; history &middot; Esc then Tab leaves the terminal</span>
+        </footer>
+      </div>
+    </section>
+    <!-- ===== Night 2: end of shift report ===== -->
+    <section id="screen-n2-results" class="screen" hidden aria-labelledby="n2-results-title">
+      <div class="window">
+        <header class="titlebar">
+          <span class="tb-icon" aria-hidden="true"></span>
+          <span class="tb-title">End of Shift Report: <span id="n2-results-report-id">CASE</span></span>
+          <span class="tb-meta">SOC-WS-07</span>
+        </header>
+        <div class="window-body report">
+          <div class="report-summary">
+            <p class="mono dim small" id="n2-results-filed">Case filed 6:00 AM</p>
+            <h1 id="n2-results-title">Case filed</h1>
+            <p class="results-rank">Rank: <span class="rank-name" id="n2-results-rank"></span></p>
+            <dl class="stats" id="n2-results-stats"></dl>
+            <p class="best mono" id="n2-results-best"></p>
+            <div class="button-row">
+              <button type="button" class="btn btn-primary" id="n2-replay-btn">Work the case again</button>
+              <button type="button" class="btn" id="n2-results-menu-btn">Log off to main menu</button>
+            </div>
+          </div>
+
+          <div class="report-detail">
+            <section class="review" aria-labelledby="n2-review-title">
+              <h2 id="n2-review-title" class="panel-head">Case file review</h2>
+              <p class="best" id="n2-review-summary"></p>
+              <ol class="review-list" id="n2-review-list"></ol>
+            </section>
+
+            <section class="review" aria-labelledby="n2-timeline-title">
+              <h2 id="n2-timeline-title" class="panel-head">Attack timeline</h2>
+              <p class="best">What really happened on kl-rpt-01. <span class="tag tag-ok">Seen</span> marks evidence you put on screen tonight.</p>
+              <ol class="timeline" id="n2-timeline"></ol>
+            </section>
+
+            <section class="review" aria-labelledby="n2-audit-title">
+              <h2 id="n2-audit-title" class="panel-head">Audit note</h2>
+              <div class="debrief-card">
+                <h3 id="n2-audit-heading"></h3>
+                <p id="n2-audit-text"></p>
+                <p class="debrief-status" id="n2-audit-status"></p>
+              </div>
+            </section>
+
+            <section class="review" aria-labelledby="n2-recs-title">
+              <h2 id="n2-recs-title" class="panel-head">Recommendations for the day crew</h2>
+              <ol class="recs" id="n2-recs"></ol>
+            </section>
+
+            <section class="review" aria-labelledby="n2-next-title">
+              <h2 id="n2-next-title" class="panel-head">Still open</h2>
+              <div class="debrief-card is-open"><p id="n2-next"></p></div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- ===== Taskbar ===== -->
@@ -359,6 +573,19 @@
   </div>
 </dialog>
 
+<!-- Night 2 handoff, reopened from the terminal with the "?" button -->
+<dialog id="n2-help-dialog" class="dialog" aria-labelledby="n2-help-title">
+  <h2 class="dialog-title" id="n2-help-title">Case handoff</h2>
+  <div class="dialog-inner">
+    <p class="dim small" id="n2-help-from"></p>
+    <div id="n2-help-body" class="prose"></div>
+    <div id="n2-help-legend"></div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-primary" id="n2-help-close">Back to the terminal</button>
+    </div>
+  </div>
+</dialog>
+
 <!-- Settings -->
 <dialog id="settings-dialog" class="dialog" aria-labelledby="settings-title">
   <h2 class="dialog-title" id="settings-title">Workstation settings</h2>
@@ -400,6 +627,22 @@
     <div class="dialog-actions">
       <button type="button" class="btn" id="reset-cancel" autofocus>Cancel</button>
       <button type="button" class="btn btn-report" id="reset-confirm">Yes, reset progress</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Night 2: confirm filing the case report -->
+<dialog id="n2-submit-dialog" class="dialog dialog-small" aria-labelledby="n2-submit-title" aria-describedby="n2-submit-desc">
+  <h2 class="dialog-title" id="n2-submit-title">File the case report?</h2>
+  <div class="dialog-inner">
+    <p id="n2-submit-desc">Filing closes your session on kl-rpt-01. You can't run more commands or change your answers.</p>
+    <div id="n2-submit-blanks" hidden>
+      <p class="submit-warn">These fields are blank and will count as wrong:</p>
+      <ul class="submit-blanks" id="n2-submit-blank-list"></ul>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn" id="n2-submit-cancel" autofocus>Keep investigating</button>
+      <button type="button" class="btn btn-primary" id="n2-submit-confirm">File report</button>
     </div>
   </div>
 </dialog>

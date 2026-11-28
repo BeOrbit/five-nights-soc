@@ -3,7 +3,8 @@
  *
  * The game is driven entirely by data/night1.json: emails, scoring, ranks,
  * and shift length all come from there. This file turns that data into the
- * inbox and handles hovering, flagging, verdicts, XP, and the clock.
+ * inbox and handles hovering, flagging, verdicts, XP, and the clock. The main
+ * menu, taskbar, and settings live in app.js and screens.js.
  *
  * Security note: every piece of email content is inserted with textContent,
  * never innerHTML, so nothing in the data can run as code. Links inside
@@ -12,26 +13,18 @@
  */
 
 import { getNightBest, saveNightResult } from "./storage.js";
-import { initSettings, scrollBehavior } from "./settings.js";
+import { scrollBehavior } from "./settings.js";
 import { play } from "./sound.js";
+import { $, el, tag, formatClock, signed, plural, shiftCode as codeFor } from "./ui.js";
+import { rankFor as rankForXp } from "./ranks.js";
+import { showScreen, onScreenChange, isScreenVisible } from "./screens.js";
 
 const NIGHT = 1;
 const DATA_URL = "data/night1.json";
 const WORKSTATION = "SOC-WS-07";
 
-const SCREENS = ["menu", "howto", "briefing", "inbox", "results"];
-// What the taskbar shows for each screen, like the active window's title.
-const TASK_LABELS = {
-  menu: "Logon: SOC-WS-07",
-  howto: "KL-SOC-MEMO-0412.txt",
-  briefing: "Handoff Log",
-  inbox: "Mail Triage: SOC Queue",
-  results: "End of Shift Report",
-};
-// Screens where a shift is under way, so the taskbar shows XP and progress.
-const SHIFT_SCREENS = new Set(["briefing", "inbox", "results"]);
-
-const $ = (id) => document.getElementById(id);
+// Called when the player leaves Night 1 for the main menu (set in init()).
+let exitToMenu = () => {};
 
 const state = {
   data: null,
@@ -54,46 +47,13 @@ let tipOwner = null;
 
 /* ---------- Small helpers ---------- */
 
-/** Build an element. Text always goes through textContent. */
-function el(tag, { className, text, attrs } = {}, children = []) {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  if (attrs) for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, value);
-  for (const child of children) node.append(child);
-  return node;
-}
-
-function formatClock(totalMinutes) {
-  const minutes = Math.round(totalMinutes);
-  const h24 = Math.floor(minutes / 60) % 24;
-  const m = minutes % 60;
-  const suffix = h24 < 12 ? "AM" : "PM";
-  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-  return `${h12}:${String(m).padStart(2, "0")} ${suffix}`;
-}
-
-function signed(n) {
-  return n > 0 ? `+${n}` : String(n);
-}
-
-function plural(n, word) {
-  return `${n} ${word}${n === 1 ? "" : "s"}`;
-}
-
 function isRedFlag(email, id) {
   return Object.hasOwn(email.redFlags, id);
 }
 
-/** A small status tag. The word carries the meaning; color only reinforces it. */
-function tag(text, kind) {
-  return el("span", { className: `tag tag-${kind}`, text });
-}
-
 /** "MMDD" from the night's shift date, used in ticket numbers. */
 function shiftCode() {
-  const match = /^\d{4}-(\d{2})-(\d{2})$/.exec(state.data.shiftDate ?? "");
-  return match ? `${match[1]}${match[2]}` : "0000";
+  return codeFor(state.data.shiftDate);
 }
 
 function ticketId(i) {
@@ -125,12 +85,7 @@ function maxPossibleXp() {
 
 /** Ranks are set as a percent of the best possible score, so they scale as emails are added. */
 function rankFor(xp) {
-  const max = maxPossibleXp();
-  const percent = max > 0 ? (xp / max) * 100 : 0;
-  const ranks = [...state.config.ranks].sort((a, b) => a.minPercent - b.minPercent);
-  let rank = ranks[0].name;
-  for (const r of ranks) if (percent >= r.minPercent) rank = r.name;
-  return rank;
+  return rankForXp(xp, maxPossibleXp(), state.config.ranks);
 }
 
 function currentEmail() {
@@ -153,6 +108,7 @@ function updateProgress() {
   const done = handledCount();
   $("hud-progress-text").textContent = `${done} of ${total} emails handled`;
   const bar = $("hud-progress");
+  bar.setAttribute("aria-label", "Emails handled");
   bar.setAttribute("aria-valuemax", String(total));
   bar.setAttribute("aria-valuenow", String(done));
   $("hud-progress-fill").style.width = `${total ? (done / total) * 100 : 0}%`;
@@ -181,66 +137,11 @@ function updateHud({ bump = false } = {}) {
   }
 }
 
-/* ---------- Screens ---------- */
+/* ---------- Shift state and the handoff dialog ---------- */
 
-function showScreen(name) {
-  hideTooltip();
-  for (const screen of SCREENS) $(`screen-${screen}`).hidden = screen !== name;
-  $("help-btn").hidden = name !== "inbox";
-  $("logoff-btn").hidden = name === "menu";
-  $("tray-shift").hidden = !SHIFT_SCREENS.has(name);
-  $("task-window").textContent = TASK_LABELS[name];
-  window.scrollTo(0, 0);
-}
-
-/* ---------- Main menu, memo, and logging off ---------- */
-
-function renderMenu() {
-  const best = getNightBest(NIGHT);
-  $("menu-best").hidden = !best;
-  if (best) $("menu-best").textContent = `Best: ${best.bestXp} XP, ${best.bestRank}`;
-  const start = $("menu-start-btn");
-  start.textContent = "Start Night 1";
-  start.disabled = false;
-}
-
-function showMenu() {
-  renderMenu();
-  showScreen("menu");
-  $("menu-start-btn").focus({ preventScroll: true });
-}
-
-/** Fill the memo's scoring and rank tables from config, so they never go stale. */
-function renderMemo() {
-  const { xp, ranks } = state.config;
-  const rows = [
-    ["Correct call", xp.correctCall],
-    ["Each real red flag you flag", xp.redFlagFound],
-    ["Each thing you flag that isn't a red flag", xp.falseFlag],
-    ["Wrong call", xp.wrongCall],
-  ];
-  $("memo-xp").replaceChildren(
-    ...rows.map(([label, value]) => el("tr", {}, [el("td", { text: label }), el("td", { text: `${signed(value)} XP` })])),
-  );
-  const sorted = [...ranks].sort((a, b) => a.minPercent - b.minPercent);
-  $("memo-ranks").replaceChildren(
-    ...sorted.map((r) =>
-      el("tr", {}, [
-        el("td", { text: r.name }),
-        el("td", { text: r.minPercent === 0 ? "Starting rank" : `${r.minPercent}% or more` }),
-      ]),
-    ),
-  );
-}
-
-function isShiftInProgress() {
-  return !$("screen-inbox").hidden;
-}
-
-/** Taskbar "Log off": confirm first if a shift is under way. */
-function requestLogoff() {
-  if (isShiftInProgress()) $("logoff-dialog").showModal();
-  else showMenu();
+/** True while emails are being worked (the app asks before logging off). */
+export function isShiftInProgress() {
+  return isScreenVisible("inbox");
 }
 
 /** The "?" button: the same briefing, in a dialog, without leaving the shift. */
@@ -254,19 +155,17 @@ function buildBriefingDialog() {
   $("briefing-dialog-legend").replaceChildren(...[...lists].map((node) => node.cloneNode(true)));
 }
 
-function openBriefingDialog() {
-  if ($("screen-inbox").hidden) return;
+export function openBriefingDialog() {
+  if (!isShiftInProgress()) return;
   hideTooltip();
   $("briefing-dialog").showModal();
 }
 
-/** After "Reset progress", stop showing the old best score anywhere. */
-function onProgressReset() {
+/** After "Reset progress", stop showing the old best score on Night 1's screens. */
+export function onProgressReset() {
   $("briefing-best").hidden = true;
   $("briefing-best").textContent = "";
-  $("menu-best").hidden = true;
-  $("menu-best").textContent = "";
-  if (!$("screen-results").hidden) $("results-best").textContent = "No saved best score on file.";
+  if (isScreenVisible("results")) $("results-best").textContent = "No saved best score on file.";
 }
 
 function renderBriefing() {
@@ -288,7 +187,7 @@ function renderBriefing() {
   start.disabled = false;
 }
 
-function openBriefing() {
+export function openBriefing() {
   renderBriefing();
   state.minutes = 0;
   state.xp = 0;
@@ -830,40 +729,18 @@ function validateData(data) {
 }
 
 function bindEvents() {
-  // Main menu and navigation
-  $("menu-start-btn").addEventListener("click", openBriefing);
-  $("menu-howto-btn").addEventListener("click", () => {
-    showScreen("howto");
-    $("howto-back-btn").focus({ preventScroll: true });
-  });
-  $("menu-settings-btn").addEventListener("click", () => $("settings-btn").click());
-  $("menu-credits-btn").addEventListener("click", () => $("credits-dialog").showModal());
-  $("credits-close").addEventListener("click", () => $("credits-dialog").close());
-  $("howto-back-btn").addEventListener("click", showMenu);
-  $("briefing-back-btn").addEventListener("click", showMenu);
-  $("results-menu-btn").addEventListener("click", showMenu);
-  $("logoff-btn").addEventListener("click", requestLogoff);
-  $("logoff-cancel").addEventListener("click", () => $("logoff-dialog").close());
-  $("logoff-confirm").addEventListener("click", () => {
-    $("logoff-dialog").close();
-    showMenu();
-  });
-  for (const id of ["credits-dialog", "logoff-dialog"]) {
-    $(id).addEventListener("click", (event) => {
-      if (event.target === $(id)) $(id).close();
-    });
-  }
+  $("briefing-back-btn").addEventListener("click", () => exitToMenu());
+  $("results-menu-btn").addEventListener("click", () => exitToMenu());
 
   $("start-btn").addEventListener("click", startShift);
   $("replay-btn").addEventListener("click", startShift);
   $("report-btn").addEventListener("click", () => decide("phishing"));
   $("trust-btn").addEventListener("click", () => decide("legitimate"));
-  $("help-btn").addEventListener("click", openBriefingDialog);
   $("briefing-dialog-close").addEventListener("click", () => $("briefing-dialog").close());
   $("briefing-dialog").addEventListener("click", (event) => {
     if (event.target === $("briefing-dialog")) $("briefing-dialog").close();
   });
-  initSettings({ onReset: onProgressReset });
+  onScreenChange(hideTooltip);
 
   // Remember how the last press happened (mouse, pen, or touch).
   document.addEventListener("pointerdown", (event) => {
@@ -955,26 +832,23 @@ function handleShortcut(event) {
   if (handled) event.preventDefault();
 }
 
-async function init() {
+/**
+ * Wire up Night 1's screens. `onExit` returns the player to the main menu.
+ * Call once at startup, before load().
+ */
+export function init({ onExit }) {
+  exitToMenu = onExit;
   bindEvents();
-  showScreen("menu");
-  try {
-    const response = await fetch(DATA_URL, { headers: { Accept: "application/json" } });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    state.data = validateData(await response.json());
-    state.config = state.data.config;
-    renderBriefing();
-    buildBriefingDialog();
-    renderMemo();
-    renderMenu();
-    updateHud();
-  } catch (error) {
-    console.error("Failed to load night data:", error);
-    $("menu-start-btn").textContent = "Unavailable";
-    const msg = $("load-error");
-    msg.textContent = "Couldn't reach the shift schedule. Refresh the page to try again.";
-    msg.hidden = false;
-  }
 }
 
-init();
+/** Fetch and check Night 1's data. Returns the data; throws if it can't load. */
+export async function load() {
+  const response = await fetch(DATA_URL, { headers: { Accept: "application/json" } });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  state.data = validateData(await response.json());
+  state.config = state.data.config;
+  renderBriefing();
+  buildBriefingDialog();
+  updateHud();
+  return state.data;
+}

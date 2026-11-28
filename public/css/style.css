@@ -401,6 +401,9 @@ kbd {
 .memo-table td:last-child { font-family: var(--mono); }
 .memo-table.keys td:last-child { font-family: var(--sans); }
 .memo-table td:first-child { white-space: nowrap; }
+code { font-family: var(--mono); font-size: 0.875em; }
+.paper code { background: #f6f2e8; padding: 0 0.2rem; border: 1px solid var(--paper-rule); border-radius: var(--radius); }
+.memo-addendum { border-top: 2px dashed var(--paper-rule); padding-top: 1.25rem; }
 .paper kbd { background: #f6f2e8; color: var(--paper-ink); border-color: var(--paper-muted); }
 
 .memo-foot { border-top: 1px solid var(--paper-rule); padding-top: 1rem; margin-top: 2rem; }
@@ -663,6 +666,228 @@ kbd {
 
 .feedback .btn { margin-top: 0.25rem; }
 
+/* ---------- Night 2: terminal investigation ---------- */
+/* A plain-DOM terminal (not xterm.js) so the CSP can keep style-src 'self'. */
+
+.window-body.investigation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  padding: 0;
+  min-height: 34rem;
+}
+
+.term {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #070706;
+  border-right: 1px solid var(--border);
+  font: 0.8125rem/1.45 var(--mono);
+}
+
+/* A fixed height (not flex: 1), so long output scrolls inside the terminal
+   instead of stretching the page and pushing the command line out of view. */
+.term-output {
+  flex: none;
+  height: calc(100dvh - 13.5rem);
+  min-height: 22rem;
+  overflow-y: auto;
+  padding: 0.75rem 0.85rem 0.25rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.term-output:focus-visible { outline-offset: -3px; }
+
+.term-row { min-height: 1.45em; }
+.term-row.is-echo { margin-top: 0.15rem; }
+.term-echo-prompt, .term-prompt { color: var(--ok); font-weight: 600; }
+.term-row.is-error { color: var(--danger); }
+.term-row.is-warn { color: var(--amber); }
+.term-row.is-note { color: var(--muted); }
+.term-row.is-clue {
+  color: var(--ok);
+  background: var(--ok-soft);
+  border-left: 3px solid var(--ok);
+  padding-left: 0.5rem;
+  margin: 0.15rem 0;
+}
+.term-dir { color: var(--amber); font-weight: 600; }
+.term-exec { color: var(--ok); font-weight: 600; }
+/* ls separators are real text (two spaces), so copied output reads like real ls. */
+.term-sep { white-space: pre-wrap; }
+
+.term-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  padding: 0.35rem 0.85rem 0.6rem;
+}
+/* The focus ring sits on the whole command line, so it's easy to see where typing goes. */
+.term-line:focus-within { box-shadow: inset 0 -2px 0 var(--amber); }
+.term-prompt { white-space: pre; flex: none; cursor: text; }
+.term-input {
+  flex: 1;
+  min-width: 4rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  caret-color: var(--amber);
+}
+.term-input:focus { outline: none; }
+.term-input:disabled { color: var(--muted); }
+.term-input::placeholder { color: var(--muted); }
+
+/* On-screen Tab and arrow keys: only on touch screens and narrow windows. */
+.term-keys { display: none; gap: 0.4rem; padding: 0 0.85rem 0.6rem; }
+.term-keys .btn { min-height: 2.5rem; min-width: 3.25rem; justify-content: center; font-family: var(--mono); }
+
+.term-hint.is-active { color: var(--amber); }
+
+/* The side pane is as tall as the terminal and scrolls inside itself.
+   contain: size keeps its content from stretching the grid row, so the
+   terminal sets the height and the pane fills it. */
+.case-pane {
+  min-width: 0;
+  background: var(--panel-2);
+  display: flex;
+  flex-direction: column;
+  contain: size;
+  overflow: hidden;
+}
+.case-panel { flex: 1; min-height: 0; overflow-y: auto; }
+.case-panel:focus-visible { outline-offset: -3px; }
+
+.case-tabs { display: flex; flex: none; border-bottom: 1px solid var(--border-strong); }
+.case-tab {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.5rem 0.5rem;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: 600 0.75rem var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+.case-tab:hover { color: var(--text); background: var(--panel-3); }
+.case-tab[aria-selected="true"] { color: var(--amber); border-bottom-color: var(--amber); background: var(--panel); }
+.case-tab:focus-visible { outline-offset: -3px; }
+
+.case-tip { margin: 0; padding: 0.6rem 0.75rem; color: var(--muted); font-size: 0.8125rem; }
+.case-tip strong { color: var(--text); }
+
+/* ---------- Night 2: case file ---------- */
+
+.cf-intro { margin: 0; padding: 0.6rem 0.75rem; font-size: 0.8125rem; color: var(--muted); border-bottom: 1px solid var(--border); }
+.cf-hint { display: block; }
+
+.cf-field {
+  margin: 0;
+  padding: 0.7rem 0.75rem 0.8rem;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+.cf-field.has-error { border-left: 3px solid var(--danger); padding-left: calc(0.75rem - 3px); }
+.cf-field { position: relative; }
+.cf-label { display: block; font-weight: 600; font-size: 0.875rem; padding: 0 2.25rem 0 0; }
+/* A floated legend drops the browser's special fieldset layout, so the ? button lines up like on text fields. */
+.cf-group > legend { float: left; width: 100%; }
+.cf-group > legend + .cf-help-btn + .cf-prompt { clear: both; padding-top: 0.15rem; }
+.cf-num { color: var(--amber); }
+.cf-prompt { margin: 0.15rem 0 0.45rem; padding-right: 2.25rem; font-size: 0.8125rem; color: var(--muted); }
+.cf-help {
+  margin: 0 0 0.5rem;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.8125rem;
+  background: var(--amber-soft);
+  border-left: 3px solid var(--amber);
+}
+.cf-help-btn {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.75rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--panel-3);
+  color: var(--muted);
+  font: 600 0.75rem var(--mono);
+  cursor: pointer;
+}
+.cf-help-btn:hover, .cf-help-btn[aria-expanded="true"] { color: var(--amber); border-color: var(--amber); }
+
+.cf-input {
+  display: block;
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: #070706;
+  color: var(--text);
+  font-size: 0.875rem;
+  caret-color: var(--amber);
+}
+.cf-input::placeholder { color: #6b675f; }
+.cf-input:focus-visible { outline-offset: 0; border-color: var(--amber); }
+.cf-input[aria-invalid="true"] { border-color: var(--danger); }
+.cf-input:disabled, .cf-option input:disabled + span { opacity: 0.6; }
+
+.cf-options { display: grid; gap: 0.15rem; margin-bottom: 0.4rem; }
+.cf-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.3rem 0.35rem;
+  font-size: 0.8125rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.cf-option:hover { background: var(--panel-3); }
+.cf-option input { margin: 0.2rem 0 0; width: 1rem; height: 1rem; accent-color: var(--amber); }
+.cf-sublabel { display: block; font-size: 0.8125rem; color: var(--muted); margin: 0.35rem 0 0.25rem; }
+.cf-error { margin: 0.35rem 0 0; color: var(--danger); font-size: 0.8125rem; }
+
+.cf-submit { padding: 0.75rem; display: grid; gap: 0.5rem; }
+.cf-submit .btn { justify-content: center; }
+.cf-submit .error { margin: 0; }
+.cf-note { margin: 0; font-size: 0.75rem; color: var(--muted); }
+
+.submit-warn { color: var(--amber); font-weight: 600; margin-bottom: 0.35rem; }
+.submit-blanks { margin: 0 0 0.75rem; padding-left: 1.1rem; }
+
+.evidence-list { list-style: none; margin: 0; padding: 0; }
+.evidence-item {
+  display: grid;
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid var(--ok);
+  font-size: 0.8125rem;
+}
+.evidence-time { color: var(--muted); font-size: 0.75rem; padding-top: 0.05rem; }
+.evidence-empty { padding: 0.6rem 0.75rem; margin: 0; color: var(--muted); font-size: 0.8125rem; border-bottom: 1px solid var(--border); }
+
+.session-stats {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  margin: 0;
+  font-size: 0.8125rem;
+}
+.session-stats dt, .session-stats dd { margin: 0; padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--border); }
+.session-stats dt { color: var(--muted); }
+.session-stats dd { font: 600 0.8125rem var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+
 /* ---------- End of shift report ---------- */
 
 .window-body.report {
@@ -672,7 +897,9 @@ kbd {
 }
 .report-summary h1 { font-size: 1.5rem; margin: 0.25rem 0 0.5rem; }
 .results-rank { font-size: 1.0625rem; margin-bottom: 1rem; }
-#results-rank { color: var(--amber); font-weight: 600; }
+#results-rank, .rank-name { color: var(--amber); font-weight: 600; }
+.report-summary h1:focus { outline: none; }
+.report-detail { display: grid; gap: 1.5rem; min-width: 0; }
 
 .stats {
   display: grid;
@@ -714,6 +941,36 @@ kbd {
 }
 .review-flags { margin: 0 0 0.75rem; padding-left: 1.1rem; display: grid; gap: 0.25rem; }
 .review-why { color: var(--muted); margin-bottom: 0; }
+.review-item.is-pass { border-left-color: var(--ok); }
+.review-prompt { color: var(--muted); margin-bottom: 0.4rem; }
+.review-answer { font-weight: 600; overflow-wrap: anywhere; }
+.review-answer.is-pass { color: var(--ok); }
+.review-answer.is-fail { color: var(--danger); }
+.review-evidence { font-size: 0.8125rem; overflow-wrap: anywhere; }
+
+/* Night 2 debrief: attack timeline, audit note, recommendations */
+.timeline { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); background: var(--panel-2); }
+.timeline-step {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  border-top: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  font-size: 0.875rem;
+}
+.timeline-step:first-child { border-top: 0; }
+.timeline-step.is-seen { border-left-color: var(--ok); }
+.timeline-time { color: var(--amber); font-size: 0.8125rem; padding-top: 0.05rem; }
+.timeline-body p { margin: 0; }
+.timeline-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; margin-top: 0.25rem !important; }
+.timeline-source { font: 0.75rem var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+
+.debrief-card { border: 1px solid var(--border); border-left: 3px solid var(--amber); background: var(--panel-2); padding: 0.75rem 0.85rem; font-size: 0.875rem; }
+.debrief-card h3 { font-size: 0.9375rem; margin-bottom: 0.35rem; }
+.debrief-card p:last-child { margin-bottom: 0; }
+.debrief-status { color: var(--muted); font-family: var(--mono); font-size: 0.8125rem; }
+.recs { margin: 0; padding: 0.75rem 0.85rem 0.75rem 2rem; border: 1px solid var(--border); background: var(--panel-2); display: grid; gap: 0.4rem; font-size: 0.875rem; }
 
 /* ---------- Taskbar ---------- */
 
@@ -929,6 +1186,16 @@ kbd {
   .howto-rail { position: static; }
   .handoff { grid-template-columns: 1fr; }
   .window-body.report { grid-template-columns: 1fr; }
+  .window-body.investigation { grid-template-columns: 1fr; }
+  .term { border-right: 0; border-bottom: 1px solid var(--border); }
+  .term-output { height: 60dvh; min-height: 16rem; }
+  /* Stacked: the pane flows under the terminal at its natural height. */
+  .case-pane { contain: none; overflow: visible; }
+  .case-panel { overflow: visible; }
+}
+
+@media (pointer: coarse) {
+  .term-keys { display: flex; }
 }
 
 @media (max-width: 760px) {
@@ -953,7 +1220,19 @@ kbd {
   .attachments { padding: 0 1rem 1rem; }
   .feedback { margin: 0 0.75rem 1rem; }
   .flag-review li { grid-template-columns: 1fr; gap: 0.25rem; }
+  .timeline-step { grid-template-columns: 1fr; gap: 0.15rem; padding: 0.55rem 0.75rem; }
+  .cf-input { font-size: 1rem; } /* 16px stops iOS zooming in on focus */
+  .cf-option { padding: 0.45rem 0.35rem; }
+  .case-tab { padding: 0.75rem 0.5rem 0.65rem; }
   .status-right { display: none; }
+  .term-keys { display: flex; }
+  .term-output { height: 55dvh; padding: 0.6rem 0.6rem 0.25rem; }
+  .term-line { padding: 0.35rem 0.6rem 0.6rem; }
+  .term-input { font-size: 1rem; } /* 16px stops iOS zooming in on focus */
+  /* Narrow screen: one name per line, like ls when it has no room for columns.
+     Each name (span or bare text) becomes its own flex item. */
+  .term-cols { display: flex; flex-direction: column; }
+  .term-cols .term-sep { display: none; }
 
   /* Phone taskbar: buttons and clock on one row, shift progress on a full row below. */
   .taskbar { flex-wrap: wrap; row-gap: 0.4rem; }

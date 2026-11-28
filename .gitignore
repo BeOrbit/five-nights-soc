@@ -160,3 +160,6 @@ vite.config.ts.timestamp-*
 .wrangler/
 .dev.vars
 .dev.vars.*
+
+# Night 2 plaintext answer key (tests read it when present; never commit)
+test/answer-key.local.json
